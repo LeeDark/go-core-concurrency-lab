@@ -41,7 +41,62 @@
   - **Blocked** state: when the thread performs an I/O operation or blocks waiting for a lock or channel operation.
   - When the I/O operation completes, the lock is unlocked, or the channel operation is completed, the thread moves 
     back to the **Ready** state, waiting to be scheduled.
-- 
+
+## About
+
+**Parallelism** means doing multiple things at the same time. 
+In the coffee shop example, this means hiring another barista and adding another coffee machine, so two customers can be served simultaneously.
+
+**Concurrency** is about structuring a problem into multiple independent parts that can coordinate with each other.
+In the coffee shop example, this means splitting the process into stages: taking orders, grinding coffee, and brewing coffee.
+
+The main idea is: **concurrency is about design and structure, while parallelism is about execution**.
+In Go, this distinction matters because goroutines and channels help express concurrent designs.
+Whether the work actually runs in parallel depends on the Go runtime, CPU cores, GOMAXPROCS, blocking operations, synchronization, and other delightful machinery humans invented to make simple things complicated.
+
+## Concurrent code is not automatically faster than sequential code.
+
+Concurrency helps structure a program into independent parts.
+Performance depends on whether those parts can actually run in parallel, how many CPU cores are available, and how much overhead is introduced by goroutines, scheduling, synchronization, channels, mutexes, and contention.
+
+Goroutines are cheaper than OS threads, but they are not free.
+Creating them, scheduling them, switching between them, synchronizing them, and passing data between them all have a cost.
+
+The Go scheduler uses this model:
+
+```text
+G — goroutine
+M — OS thread
+P — logical processor used by the Go runtime
+```
+
+GOMAXPROCS limits how many OS threads can execute Go code at the same time. By default, it usually matches the number of available CPU cores.
+
+A goroutine can be in one of these states:
+
+```text
+executing — currently running
+runnable  — ready to run, waiting for CPU time
+waiting   — blocked on I/O, channel, mutex, syscall, or another event
+```
+
+The Go runtime uses local queues, a global queue, and work stealing to distribute goroutines across processors.
+Since Go 1.14, the scheduler is preemptive: a long-running goroutine can be interrupted so other goroutines can run.
+Before that, scheduling was more cooperative.
+
+Good candidates for concurrency:
+- independent CPU-heavy chunks
+- independent I/O operations
+- pipelines
+- worker pools
+- request handling
+
+Bad candidates:
+- tiny tasks
+- strongly sequential logic
+- tasks with heavy shared state
+- tasks with too much synchronization
+
 
 # Goroutines
 
