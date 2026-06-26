@@ -145,6 +145,28 @@ close(results)
 
 Do not close `results` from individual workers.
 
+### Step 6: Add Simple Tests
+
+The current test file is:
+
+```text
+workerpool/pool_test.go
+```
+
+It covers:
+
+- processing all submitted jobs;
+- preserving job-level errors in `Result.Err`;
+- closing `results` after workers finish;
+- normalizing non-positive `workerCount` to one worker.
+
+Use only targeted commands for this lab:
+
+```bash
+go test ./06-worker-pool-v1/workerpool
+go test -race ./06-worker-pool-v1/workerpool
+```
+
 ## Channel Ownership
 
 `jobs`:
@@ -182,15 +204,44 @@ Do not add cancellation or timeout to this demo.
 Before moving to Worker Pool v2, answer:
 
 1. Who closes `jobs`?
+
+   The caller closes `jobs`, because the caller owns sending jobs.
+
 2. Who closes `results`?
+
+   The pool closes `results`, because the pool owns sending results.
+
 3. Why should workers not close `results`?
+
+   Multiple workers send to `results`, so no single worker knows that all sends are finished.
+
 4. Why is `sync.WaitGroup` needed?
+
+   It lets the closer goroutine wait until all workers exit before closing `results`.
+
 5. What happens when a worker ranges over a closed `jobs` channel?
+
+   The worker receives any buffered jobs first, then the `range` loop ends.
+
 6. What happens if nobody reads from `results`?
+
+   Workers block while sending results, so the pool cannot finish.
+
 7. What happens when sending to a closed channel?
+
+   The program panics.
+
 8. What happens when reading from a closed channel?
+
+   The receive succeeds immediately with the zero value and `ok == false`.
+
 9. Why is this bounded concurrency?
+
+   The number of concurrent workers is fixed by `workerCount`.
+
 10. Why does v1 avoid `context.Context`?
+
+   V1 focuses on channel ownership, worker lifecycle, and `WaitGroup` before adding cancellation.
 
 ## Interview Angle
 
