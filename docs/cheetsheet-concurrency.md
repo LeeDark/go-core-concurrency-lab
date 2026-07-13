@@ -1,327 +1,369 @@
 # Concurrency & Parallelism
 
-- Concurrency is not how the real world works. The real world works with parallelism.
-- Parallelism is the natural way of thinking about multiple independent things interacting with each other.
-- Solution of a Problem in Concurrent Programming Control, Edsger Dijkstra, 1965.
-  - Concurrent programming & Parallel execution.
-  - Concurrency relates to how programs are written. Parallelism relates to how programs run.
-- The same concurrency principles apply to applications running on multiple machines on a distributed system, to applications running on a multi-core processor in a laptop, and to applications that run on a single-core system.
-- Communicating Sequential Processes (CSP) is a mathematical model that influenced the design of Go.
-  - Systems are composed of multiple sequential processes that are running in parallel.
-  - These processes can communicate with each other synchronously, which means that a system sending a message to 
-    the other can only continue once the other system receives it (this is exactly how unbuffered channels behave in Go.).
-- Can the system deadlock?
-  - When multiple systems run together, the possible states of the composite system grow exponentially.
-  - Independent components of a concurrent program can run in any order, making it practically impossible to do
-    state analysis.
-  - Sequential process: the state can be defined as the values in memory together with the current execution location 
-    of that program.
-  - Multiple processes are running in parallel: the state of the whole system is the combination of the states of its 
-    components.
-- Concurrency is the ability of different parts of a program to be executed out-of-order or in partial order without affecting the result.
-  - Concurrency is about how the program is written.
-  - It is about "dealing with multiple things at the same time."
-  - Doing multiple things at the same time defines parallelism.
-- Concurrent programming is about organizing a problem into computational units that can run using time sharing or 
-  that can run in parallel.
-  - Time-sharing means sharing a computing resource with multiple users or processes.
-  - Context-switching: when multiple threads of executions are created by a program, the processor runs one thread 
-    for some time, and then switches to another thread, and so on.
-- Concurrency is a programming model like object-oriented programming or functional programming.
-  - Object-oriented programming divides a problem into logically related structural components that interact with each other.
-  - Functional programming divides a problem into functional components that call each other.
-  - Concurrent programming divides a problem into temporal components that send messages to each other, and that can be interleaved or run in parallel.
-- Go runtime before 1.14 used cooperative scheduler, after it is using preemptive scheduler.
-  - In preemptive threading, a running thread can be stopped at any time during that thread’s execution.
-  - In non-preemptive threading (or cooperative threading), a running thread voluntarily gives up execution by performing a blocking operation, a system call, or something else.
-- The states a thread/gorouine can be next:
-  - **Ready** state: when a thread is **created**.
-  - **Running** state: when the scheduler **assigns** it to a processor and starts running.
-  - A **Running** thread can be **preempted** and moved back into the **Ready** state.
-  - **Blocked** state: when the thread performs an I/O operation or blocks waiting for a lock or channel operation.
-  - When the I/O operation completes, the lock is unlocked, or the channel operation is completed, the thread moves 
-    back to the **Ready** state, waiting to be scheduled.
+## Definitions
 
-## About
+**Concurrency** is the ability to structure a program as independent computational units that can make progress out of order or in a partial order without changing the intended result. The units may be interleaved through time-sharing or may run in parallel.
 
-**Parallelism** means doing multiple things at the same time. 
-In the coffee shop example, this means hiring another barista and adding another coffee machine, so two customers can be served simultaneously.
+**Parallelism** means executing multiple pieces of work at the same time.
 
-**Concurrency** is about structuring a problem into multiple independent parts that can coordinate with each other.
-In the coffee shop example, this means splitting the process into stages: taking orders, grinding coffee, and brewing coffee.
+In short: **concurrency is about how a program is designed; parallelism is about how it runs.** This distinction appears in early work such as Edsger Dijkstra's *Solution of a Problem in Concurrent Programming Control* (1965): concurrent programming and parallel execution are related, but they are not the same thing.
 
-The main idea is: **concurrency is about design and structure, while parallelism is about execution**.
-In Go, this distinction matters because goroutines and channels help express concurrent designs.
-Whether the work actually runs in parallel depends on the Go runtime, CPU cores, GOMAXPROCS, blocking operations, synchronization, and other delightful machinery humans invented to make simple things complicated.
+The coffee-shop analogy:
 
-## Concurrent code is not automatically faster than sequential code.
+- Concurrency: split the process into taking orders, grinding coffee, and brewing coffee so the stages can coordinate.
+- Parallelism: add another barista and coffee machine so two customers can be served simultaneously.
 
-Concurrency helps structure a program into independent parts.
-Performance depends on whether those parts can actually run in parallel, how many CPU cores are available, and how much overhead is introduced by goroutines, scheduling, synchronization, channels, mutexes, and contention.
+The same concurrency principles apply to a program on a single-core machine, a multi-core machine, or multiple machines in a distributed system.
 
-Goroutines are cheaper than OS threads, but they are not free.
-Creating them, scheduling them, switching between them, synchronizing them, and passing data between them all have a cost.
+## Concurrency as a programming model
 
-The Go scheduler uses this model:
+Programming models divide problems in different ways:
+
+- Object-oriented programming divides a problem into structural components that interact.
+- Functional programming divides a problem into functional components that call each other.
+- Concurrent programming divides a problem into temporal components that communicate and may be interleaved or run in parallel.
+
+Communicating Sequential Processes (CSP) is a mathematical model that influenced Go. A system is composed of independent sequential processes that communicate by passing messages. Communication may be synchronous: a sender cannot continue until a receiver accepts the message. This is how an unbuffered Go channel behaves.
+
+## Complexity and deadlocks
+
+A sequential program state consists roughly of its memory values and current execution location. In a concurrent program, the whole state is the combination of the states of all components.
+
+Independent components may run in many different orders, so the number of possible combined states grows rapidly. This makes exhaustive state analysis difficult and creates room for deadlocks, data races, and ordering bugs.
+
+## Performance
+
+Concurrent code is not automatically faster than sequential code. Actual performance depends on whether work can run in parallel, available CPUs, blocking operations, `GOMAXPROCS`, and overhead from goroutines, scheduling, synchronization, channels, mutexes, and contention.
+
+Goroutines are cheaper than OS threads, but they are not free. Creating, scheduling, switching, synchronizing, and communicating between them all have a cost.
+
+Good candidates for concurrency:
+
+- independent CPU-heavy chunks;
+- independent I/O operations;
+- pipelines;
+- worker pools;
+- request handling.
+
+Poor candidates:
+
+- tiny tasks where coordination costs more than the work;
+- strongly sequential logic;
+- tasks with heavy shared state;
+- tasks that require too much synchronization.
+
+## Go scheduler
+
+The Go scheduler is commonly described with the G-M-P model:
 
 ```text
 G — goroutine
-M — OS thread
-P — logical processor used by the Go runtime
+M — OS thread (machine)
+P — logical processor required to execute Go code
 ```
 
-GOMAXPROCS limits how many OS threads can execute Go code at the same time. By default, it usually matches the number of available CPU cores.
+Go uses an M:N scheduler: many goroutines are multiplexed over a smaller or equal set of OS threads. A `P` holds scheduler resources and a runnable queue. The runtime uses local queues, a global queue, and work stealing to distribute runnable goroutines.
 
-A goroutine can be in one of these states:
+`GOMAXPROCS` limits the number of `P`s and therefore how many OS threads can execute user-level Go code simultaneously. It usually defaults to the number of available CPUs. It does **not** limit the total number of OS threads: the runtime may create more threads when some are blocked in system calls.
+
+A goroutine is usually in one of these states:
 
 ```text
-executing — currently running
-runnable  — ready to run, waiting for CPU time
-waiting   — blocked on I/O, channel, mutex, syscall, or another event
+running   — currently executing
+runnable  — ready to execute, waiting for CPU time
+waiting   — blocked on I/O, a channel, a mutex, a syscall, or another event
 ```
 
-The Go runtime uses local queues, a global queue, and work stealing to distribute goroutines across processors.
-Since Go 1.14, the scheduler is preemptive: a long-running goroutine can be interrupted so other goroutines can run.
-Before that, scheduling was more cooperative.
+A running goroutine may be preempted and moved back to runnable. A waiting goroutine becomes runnable when the event it waits for completes.
 
-Good candidates for concurrency:
-- independent CPU-heavy chunks
-- independent I/O operations
-- pipelines
-- worker pools
-- request handling
-
-Bad candidates:
-- tiny tasks
-- strongly sequential logic
-- tasks with heavy shared state
-- tasks with too much synchronization
-
+Since Go 1.14, the scheduler supports asynchronous preemption, so long-running goroutines can be interrupted to let other goroutines run. Earlier scheduling relied more heavily on cooperative safe points and blocking operations.
 
 # Goroutines
 
-- A **process** is an instance of a program with certain dedicated resources, such as memory space, processor time, 
-  file handles (for example, most processes in Linux have stdin, stdout, and stderr), and at least one thread.
-  - Any two processes that wish to communicate have to do it through well-defined **inter-process communication** 
-    utilities.
-- A **thread** is an execution context that contains all the resources required to run a sequence of instructions.
-  - A thread is usually managed by the operating system.
-  - The stack is necessary to:
-    - keep the sequence of nested function calls within that thread.
-    - store values declared in the functions executing in that thread.
-  - A given function may execute in many different threads, so the local variables used when that function runs in a thread are stored in the stack of that thread.
-- A **scheduler** allocates processor time to threads.
-  - Some schedulers are preemptive and can stop a thread at any time to switch to another thread.
-  - Some schedulers are collaborative and have to wait for the thread to yield to switch to another one.
-- A **goroutine** is an execution context that is managed by the Go runtime (as opposed to a thread that is managed by the operating system).
-  - A goroutine usually has a much smaller startup overhead than an operating system thread. 
-  - A goroutine starts with a small stack that grows as needed.
-  - Creating new goroutines is faster and cheaper than creating operation system threads.
-- The **Go scheduler** assigns operating system threads to run goroutines.
-  - The number of operating system threads used by the Go runtime is equal to the number of processors/cores on the platform.
-    - Unless you change this by setting the GOMAXPROCS environment variable or by calling the runtime.GOMAXPROCS function.
-    - Anything more than that and the operating system will have to resort to time sharing.
-    - With GOMAXPROCS threads running in parallel, there is no context-switching overhead at the operating system level.
-  - The Go scheduler assigns goroutines to operating system threads to get more work on each thread as opposed to doing less work on many threads.
-  - The Go scheduler performs better because it knows which goroutines to wake up to get more out of them.
-- The **go** keyword starts the given function in a new goroutine.
-  - The function running as a goroutine can take parameters, but it cannot return a value.
-- Differences between threads and goroutines
-  - Threads usually have priorities. Goroutines do not have pre-assigned priorities.
-  - A goroutine starts with a small stack (Go runtimes after 1.19 use a historical average, earlier versions use 2K). 
-    - Every function call checks whether the remaining stack space is sufficient. If not, the stack is resized.
-  - An operation system thread usually starts with a much larger stack (in the order of megabytes) that usually does not grow.
-- The **Go runtime** starts several goroutines when a program starts.
-  - At least one for the **garbage collector** and another for the **main** goroutine.
-- Data race — concurrent access to the same memory location from multiple goroutines, where at least one access is a write, and the accesses are not properly synchronized.
-  - Closure — a function that captures and uses variables from its surrounding lexical scope.
-    - A common source of bugs is combining closures with goroutines and shared mutable state.
-  - Scope — the part of the source code where an identifier is visible and can be used.
-    - Scope describes visibility in code; it does not define whether a variable is allocated on the stack or on the heap.
-  - Stack — memory used for function call frames, local variables, and execution state. Each goroutine in Go has its own stack.
-    - Goroutine stacks start small and can grow dynamically, which makes goroutines lightweight.
-    - The compiler determines actual variable placement through escape analysis.
-  - Heap — memory used for values that need to outlive the current stack frame or cannot be safely kept on the stack.
-    - Heap allocations are managed by the Garbage Collector.
-  - Escape analysis — a compiler analysis that determines whether a value can be allocated on the stack or must escape to the heap.
-- Problems with goroutines
-  - The ability to create concurrent execution blocks.
-  - How to terminate them responsibly?
-- How Go runtime manages goroutines
-  - Go uses an M:N scheduler that runs M goroutines on N OS threads.
-  - Go runtime keeps track of the OS threads and the goroutines.
-  - When an OS thread is ready to execute a goroutine, the scheduler selects one that is ready to run and assigns it to the thread.
-  - The OS thread runs that goroutine until it blocks, yields, or is preempted.
-    - Blocking by channel operations or mutexes is managed by the Go runtime.
-    - If the goroutine is blocked because of a synchronous I/O operation, then the thread running that goroutine will also be blocked (this is managed by the operating system).
-      - In this case, the Go runtime starts a new thread or uses one already available and continues operation.
-      - When the OS thread unblocks (that is, the I/O operation ends), the thread is put back into use or returned to the thread pool.
-    - The Go runtime limits the number of active OS threads running user goroutines with the GOMAXPROCS variable.
-      - However, there is no limit on the number of OS threads waiting for I/O operations.
-      - So, the actual OS thread count a Go program uses can be much higher than GOMAXPROCS.
-      - However, only GOMAXPROCS of those threads would be executing user goroutines.
-    - A similar process happens for asynchronous I/O operations, such as network operations and some file operations on certain platforms.
-      - However, instead of blocking a thread for a system call, the goroutine is blocked, and a netpoller thread is used to wait for asynchronous events.
-      - When the netpoller receives events, it wakes up the relevant goroutines.
-- In Go, most I/O operations
-  - Are exposed as synchronous blocking calls from the goroutine's point of view. For example, file reads, network reads, HTTP calls, and database queries block the current goroutine until the operation completes.
-  - Asynchronous I/O is usually modeled by running blocking operations in separate goroutines and communicating results through channels, WaitGroup, errgroup, or context cancellation.
-  - For network I/O, Go runtime uses a netpoller internally, so blocking network calls usually park the goroutine instead of blocking the underlying OS thread.
-  - File I/O is generally closer to real blocking I/O.
+## Process, thread, and goroutine
 
+A **process** is an instance of a program with operating-system-managed resources such as memory, processor time, file handles, and at least one thread. Separate processes communicate through defined inter-process communication mechanisms.
 
-## Definition
-A goroutine is a lightweight concurrent execution unit managed by the Go runtime.
-It is started with the `go` keyword and runs independently from the caller.
+A **thread** is an OS-managed execution context. Its stack records nested function calls, local values, and execution state. The OS scheduler assigns processor time to threads and may preempt one thread to run another.
 
-## Cost
-Goroutines are much cheaper than OS threads because they start with a small stack that can grow dynamically. 
-However, they are not free: too many goroutines can still consume memory, scheduler time, and other resources.
+A **goroutine** is a lightweight concurrent execution unit managed by the Go runtime. The `go` keyword starts a function in a new goroutine:
+
+```go
+go work()
+```
+
+The function may accept arguments, but it cannot return a value directly to the caller. Results must be communicated through a channel, shared state, a callback, or another coordination mechanism.
+
+## Goroutines vs OS threads
+
+- Goroutines are scheduled by the Go runtime; threads are scheduled by the operating system.
+- Goroutines start with small stacks that grow and shrink as needed; OS thread stacks are usually much larger.
+- Goroutines have lower creation and context-switching overhead, but they still consume memory and scheduler time.
+- OS threads may have priorities; goroutines do not have user-assigned priorities.
+- Many goroutines can run on a smaller set of OS threads.
+
+Each function call checks whether the goroutine stack has enough space. The runtime grows the stack when necessary. The exact initial size and growth strategy are implementation details and may change between Go versions.
 
 ## Lifecycle
-A goroutine starts when the `go` statement is executed and stops when its function returns.
-If the `main` goroutine exits, the whole program exits, even if other goroutines are still running.
 
-## Leaks
-A goroutine leak happens when a goroutine never finishes, usually because it is blocked on a channel, I/O operation, lock, or missing cancellation signal.
-Leaked goroutines keep memory and resources alive, which can slowly degrade the application.
+A goroutine starts when its `go` statement executes and finishes when its function returns. If the `main` goroutine returns, the whole program exits, even if other goroutines are unfinished.
 
-## WaitGroup
-`sync.WaitGroup` is used to wait for a group of goroutines to finish. It coordinates completion, but it does not cancel goroutines or handle errors by itself.
+Creating a goroutine also creates a lifecycle question: how will it finish? A goroutine should normally have a clear completion condition, input closure, or cancellation signal.
 
-## Context
-`context.Context` is used to propagate cancellation, deadlines, timeouts, and request-scoped data across goroutines and API boundaries.
-It is commonly used to stop goroutines gracefully when their work is no longer needed.
+The Go runtime itself starts internal goroutines for work such as garbage collection and runtime management in addition to the `main` goroutine.
 
-## Communication
-Goroutines usually communicate through channels or shared memory protected by synchronization primitives such as mutexes.
-In Go, the preferred style is often “share memory by communicating”, but shared memory is still common and must be synchronized correctly.
+## How the runtime schedules goroutines
 
+The runtime tracks goroutines, OS threads, and logical processors. A runnable goroutine is selected and assigned to an OS thread associated with a `P`. It runs until it finishes, blocks, yields, or is preempted.
+
+Blocking behavior depends on the operation:
+
+- Channel and mutex blocking is known to the Go runtime, so it can park only the goroutine and run another one.
+- A blocking system call may block the OS thread. The runtime can detach its `P` and use or create another thread to keep Go code running.
+- The total OS thread count can therefore be higher than `GOMAXPROCS`, although only `GOMAXPROCS` threads execute user-level Go code at once.
+- Network I/O commonly uses the runtime netpoller. The goroutine is parked while the netpoller waits for readiness, so the OS thread usually remains available.
+- File I/O is generally closer to a blocking system call and may block its OS thread.
+
+Most Go I/O APIs still look synchronous from the goroutine's point of view: a file read, network read, HTTP call, or database query returns only after it completes. Concurrent I/O is usually expressed by running such calls in goroutines and coordinating them with channels, `WaitGroup`, `errgroup`, or context cancellation.
+
+## Stack, heap, closures, and races
+
+- **Scope** is the source-code region where an identifier is visible. It does not determine whether a value lives on the stack or heap.
+- **Stack** memory stores call frames, local values, and execution state. Every goroutine has its own stack.
+- **Heap** memory stores values that cannot safely remain in a stack frame or must outlive it. Heap allocations are managed by the garbage collector.
+- **Escape analysis** is the compiler analysis that decides whether a value can stay on the stack or must escape to the heap.
+- A **closure** captures variables from its surrounding lexical scope. Closures combined with goroutines and shared mutable variables are a common source of bugs.
+- A **data race** is concurrent access to the same memory location where at least one access is a write and the accesses are not properly synchronized.
+
+## Leaks and coordination
+
+A **goroutine leak** happens when a goroutine never finishes, commonly because it is blocked on a channel, I/O operation, lock, or missing cancellation signal. Leaked goroutines keep memory and other resources alive and may slowly degrade a program.
+
+`sync.WaitGroup` waits for a group of goroutines to finish. It coordinates completion, but does not cancel goroutines or handle their errors.
+
+`context.Context` propagates cancellation, deadlines, timeouts, and request-scoped values across API boundaries. It is commonly used to let goroutines stop when their work is no longer needed.
+
+Goroutines communicate through channels or through shared memory protected by synchronization primitives such as mutexes. “Share memory by communicating” is a useful Go guideline, but synchronized shared memory is also common and sometimes simpler.
 
 # Channels
 
-- The operating system does not know about channel operations or mutexes, which are all managed in the user space by the Go runtime.
-- Channels allow goroutines to share memory by communicating, as opposed to communicating by sharing memory.
-- When you are working with channels, you have to keep in mind that channels are two things combined together:
-  - they are synchronization tools.
-  - they are conduits for data. A channel is a first-in, first-out (FIFO) conduit.
-- A send operation to a channel will block until the channel is ready to accept a value.
-- A receive operation from a channel will block until the channel is ready to provide a value.
-- A channel is actually a pointer to a data structure that contains its internal state, so the zero-value of a channel variable is nil.
-  - Reading from or writing to a nil channel will block indefinitely.
-- The Go garbage collector will collect channels that are no longer in use.
-  - If there are no goroutines that directly or indirectly reference a channel, the channel will be garbage collected even if its buffer has elements in it.
-  - You do not need to close channels to make them eligible for garbage collection.
-  - In fact, closing a channel has more significance than just cleaning up resources.
-- Senders/Writers and Receivers/Readers
-  - A channel can have multiple receivers, but each sent value is received by only one receiver.
-  - This makes a single channel suitable for work distribution, such as worker pools.
-  - A normal send is not a broadcast: one value is not delivered to all receivers.
-  - Closing a channel is a broadcast signal: all current and future receivers are unblocked.
-  - `context.Context` uses this pattern: cancellation closes the `Done()` channel, notifying all goroutines waiting on it.
-- Closed channel
-  - A receive operation from a closed channel will always succeed with the zero value of the channel type.
-  - Writing to a closed channel will always panic.
-  - for a receiver, it is usually important to know whether the channel was closed when the read happened
-- Unbuffered channel is a channel created without a buffer
-  - Unbuffered channel acts as a synchronization point between two goroutines
-  - A send operation will block until another goroutine receives from it.
-  - A receive operation will block until another goroutine sends to it.
-  - A way to transfer data between goroutines atomically.
-- A channel can be declared with a direction
-  - `var receiveOnly <-chan int   // Can receive, cannot write or close`
-  - `var sendOnly chan<- int      // Can send, cannot read or close`
-- When multiple goroutines attempt to send to a channel or when multiple goroutines attempt to read from a channel, they are scheduled randomly.
-- Worker pool patterns
-  - You can create many worker goroutines, all receiving from a channel.
-  - Another goroutine sends work items to the channel, and each work item will be picked up by an available worker goroutine and processed.
-  - Then, you can have one goroutine reading from a channel that is written by many worker goroutines. 
-  - The reading goroutine will collect the results of computations performed by those goroutines.
-- A select statement chooses which of a set of possible send or receive operations proceed.
-  - At a high level, the select statement chooses one of the send or receive operations that can proceed and then runs the block corresponding to the chosen operation.
-  - If there are multiple send or receive operations that can proceed, the select statement chooses one randomly.
-  - If there are none, the select statement chooses the default option.
-  - If a default option does not exist, the select statement blocks until one of the channel operations becomes available.
-  - Using the default option in a select statement is useful for non-blocking sends and receives.
-- Channels can be used to gracefully terminate a program based on a signal.
+## Purpose and blocking behavior
 
-## Unbuffered
-An unbuffered channel has no capacity, so send and receive operations must meet at the same time.
-A send blocks until another goroutine receives the value, and a receive blocks until another goroutine sends a value.
+Channels are managed by the Go runtime, not by the operating system. They combine two roles:
 
-## Buffered
-A buffered channel has a fixed capacity and allows sends to proceed until the buffer is full.
-Sends block when the buffer is full, and receives block when the buffer is empty.
+- a conduit for typed data;
+- a synchronization mechanism between goroutines.
 
-## Close
-Closing a channel signals that no more values will be sent on it.
-Receivers can still read remaining buffered values, and then receive the zero value with `ok == false`.
+A channel preserves the order of values sent by a single sender. A send blocks until the channel can accept a value, and a receive blocks until a value is available.
 
-## nil channel
-A nil channel blocks forever on both send and receive operations.
-In `select`, a nil channel case is disabled, which can be useful for dynamically turning cases on or off.
+## Unbuffered channels
 
-## Directional channels
-Directional channels restrict how a channel can be used: send-only `chan<- T` or receive-only `<-chan T`.
-They are often used in function signatures to make ownership and intent clearer.
+An unbuffered channel has no storage capacity. A send blocks until another goroutine receives the value, and a receive blocks until another goroutine sends one.
 
-## Common mistakes
-Common mistakes include:
-- sending on a closed channel
-- forgetting to close a channel when receivers depend on it
-- closing a channel from the receiver side
-- leaking goroutines blocked on channels
-- using `time.Sleep` instead of proper synchronization.
-Another frequent mistake is assuming that buffered channels remove the need for synchronization; they only change blocking behavior.
+This makes an unbuffered channel a synchronization point and an atomic handoff between sender and receiver: both sides must participate before either operation completes.
+
+## Buffered channels
+
+A buffered channel has a fixed capacity:
+
+- a send blocks when the buffer is full;
+- a receive blocks when the buffer is empty;
+- otherwise, the operation can proceed without waiting for the other side at that exact moment.
+
+A buffer changes blocking behavior, but does not remove the need for synchronization, ownership, or backpressure reasoning.
+
+## Nil channels and garbage collection
+
+The zero value of a channel is `nil`. Sending to or receiving from a nil channel blocks forever. In a `select`, a case using a nil channel is disabled, which can be useful for dynamically turning cases on and off.
+
+Channels do not need to be closed for garbage collection. If no reachable goroutine or value references a channel, it can be collected even when its buffer contains values. Closing has semantic meaning—it signals that no more values will be sent—not cleanup meaning.
+
+## Closing a channel
+
+Closing a channel signals that no more values will be sent.
+
+- Receivers first drain any buffered values.
+- Later receives complete immediately with the element type's zero value and `ok == false`.
+- Sending to a closed channel panics.
+- Closing an already closed channel panics.
+
+Use the comma-ok form when a receiver must distinguish a real zero value from a closed channel:
+
+```go
+value, ok := <-ch
+```
+
+A normal send is not a broadcast: one sent value is received by one receiver. Closing behaves as a notification to all current and future receivers because receives no longer block. `context.Context` uses this pattern by closing `Done()` on cancellation.
 
 ## Ownership
-Channel ownership means being responsible for creating the channel, sending values, and closing it.
-In Go, the sender usually owns the channel closure, because only the sender knows when no more values will be sent.
 
-## Common deadlocks
-A deadlock happens when goroutines are blocked forever and no goroutine can make progress.
-Common cases include:
-- sending to an unbuffered channel without a receiver
-- receiving from a channel without a sender
-- waiting on a `WaitGroup` that is never completed
-- ranging over a channel that is never closed.
+Channel ownership means deciding who creates a channel, who sends and receives, and who closes it. The sending side usually owns closure because only senders know when no more values will be produced.
+
+A channel may have multiple senders or receivers. Each sent value is consumed by only one receiver, making a shared input channel useful for distributing work among worker goroutines. If multiple goroutines can send, they must coordinate closure so nobody sends after the channel is closed.
+
+Directional channel types make intent explicit in APIs:
+
+```go
+var receiveOnly <-chan int // receive only
+var sendOnly chan<- int    // send only
+```
+
+A receive-only reference cannot receive permission to send or close. A send-only reference cannot receive; it may close the channel because closing belongs to the sending side.
 
 ## Select
-`select` waits on multiple channel operations and runs one case that becomes ready.
-If multiple cases are ready, one is chosen pseudo-randomly; if none are ready, `default` runs if present, otherwise `select` blocks.
+
+`select` waits on a set of channel sends and receives and executes one operation that can proceed.
+
+- If one case is ready, it runs.
+- If multiple cases are ready, one is selected pseudo-randomly.
+- If no case is ready and `default` exists, `default` runs.
+- If no case is ready and there is no `default`, `select` blocks.
 
 ### Multiplexing
-`select` allows a goroutine to wait on multiple channel operations at the same time.
-It is commonly used to combine results from several channels or to react to whichever operation becomes ready first.
+
+`select` lets one goroutine wait on several channel operations and respond to whichever becomes ready first. It is commonly used to merge events, wait for a result or cancellation, or coordinate multiple pipeline stages.
 
 ### Timeout
-Timeouts are usually implemented with `select` and `time.After` or a context with a deadline.
-This prevents a goroutine from waiting forever for a channel operation.
+
+A timeout can be implemented by selecting between an operation and `time.After`, or by using a context with a deadline. This prevents waiting forever for a channel operation.
 
 ### Cancellation
-Cancellation is commonly handled by listening to `ctx.Done()` inside a `select`.
-This allows a goroutine to stop its work when the request is cancelled, a timeout expires, or the parent operation is no longer needed.
+
+Cancellation is commonly handled by selecting on `ctx.Done()`. When the context is cancelled, its `Done` channel closes and all goroutines waiting on it can stop.
 
 ### Default case risks
-A `default` case makes `select` non-blocking, which can be useful but also dangerous.
-If used carelessly, it can create busy loops, high CPU usage, missed backpressure, or logic that silently skips work instead of waiting properly.
 
+A `default` case makes `select` non-blocking. This is useful when skipping an unavailable operation is intentional, but careless use can create busy loops, high CPU usage, missed backpressure, or silently dropped work.
+
+## Common mistakes and deadlocks
+
+A deadlock occurs when goroutines are blocked forever and no goroutine can make progress. Common channel-related mistakes include:
+
+- sending to a closed channel;
+- closing a channel from the receiver side;
+- closing a channel while other senders may still use it;
+- sending to an unbuffered channel without a receiver;
+- receiving from a channel without a sender;
+- ranging over a channel that is never closed;
+- leaking goroutines blocked on channels;
+- waiting on a `WaitGroup` whose counter never reaches zero;
+- using `time.Sleep` instead of proper synchronization.
 
 # Worker Pool
 
-Context
-- cancellation;
-- timeout;
-- deadline;
-- values: осторожно.
-
 ## Pattern
+
+Worker Pool v1 uses a fixed number of goroutines to process a stream of jobs:
+
+```text
+producer -> jobs channel -> N workers -> results channel -> consumer
+```
+
+Instead of creating one goroutine for every job, the pool starts `workerCount` goroutines. Each worker repeatedly receives a job, calls the handler, sends its result, and exits when `jobs` is closed and drained.
+
+This is **bounded concurrency**: at most `workerCount` handlers run simultaneously.
+
+## API
+
+```go
+type Job struct {
+	ID      int
+	Payload string
+}
+
+type Result struct {
+	JobID int
+	Value string
+	Err   error
+}
+
+func Run(workerCount int, jobs <-chan Job, handle func(Job) Result) <-chan Result
+```
+
+The directional types document intent: the pool only receives from `jobs`, and the caller only receives from the returned results channel. The current implementation normalizes a non-positive `workerCount` to one.
+
+## Lifecycle and channel ownership
+
+`jobs` ownership:
+
+- the caller sends jobs;
+- the caller closes `jobs`;
+- workers receive jobs;
+- workers never close `jobs`.
+
+`results` ownership:
+
+- workers send results;
+- the caller receives results;
+- the pool closes `results`;
+- the caller and individual workers never close `results`.
+
+The pool uses `sync.WaitGroup` to close `results` safely:
+
+```text
+Add before starting workers
+Done when each worker exits
+Wait in a separate coordinator goroutine
+close(results) after Wait returns
+```
+
+No individual worker can close `results`, because it does not know whether the other workers have finished sending.
+
+The normal flow is:
+
+```text
+create jobs channel
+start the pool
+send jobs
+close jobs
+range over results
+```
+
 ## When to use
+
+- jobs are independent;
+- concurrency must be bounded;
+- work arrives as a stream;
+- throughput or pressure on a dependency must be controlled;
+- results can be collected asynchronously.
+
 ## When not to use
+
+- work is small and strictly sequential;
+- jobs depend heavily on one another;
+- one goroutine is sufficient;
+- a semaphore around existing goroutines expresses the limit more clearly;
+- durable queuing, retries, or distributed processing are required.
+
 ## Backpressure
-## Cancellation
+
+Both channels are unbuffered in v1. Producers wait until workers can receive jobs, and workers wait until the consumer can receive results.
+
+If nobody reads `results`, workers block while sending. They cannot exit, the `WaitGroup` cannot finish, and the coordinator cannot close `results`. The consumer must drain the channel unless a later version adds cancellation.
+
 ## Error handling
+
+Each job may return an error in `Result.Err`. V1 preserves job-level errors but does not cancel the pool, retry work, or define a global error policy.
+
+## Scope of v1
+
+V1 focuses on goroutines, channel ownership, a fixed worker count, `sync.WaitGroup`, and correct result-channel closure. It deliberately excludes `context.Context`, cancellation, deadlines, timeouts, graceful shutdown, goroutine-leak checks, and advanced error handling. Those topics belong to Worker Pool v2.
+
 ## Testing
+
+The tests verify:
+
+- all submitted jobs are processed;
+- job errors remain in `Result.Err`;
+- `results` closes after all workers finish;
+- a non-positive worker count becomes one worker.
+
+Use targeted commands for this lab:
+
+```bash
+go test ./06-worker-pool-v1/workerpool
+go test -race ./06-worker-pool-v1/workerpool
+```
 
 # Race Detector / Memory Model / Scheduler
 
@@ -333,44 +375,3 @@ Context
 ## CPU-bound vs I/O-bound
 
 # Interview
-
-```text
-1. Что такое goroutine и чем она отличается от OS thread?
-2. Как остановить goroutine?
-3. Что такое goroutine leak?
-4. Чем buffered channel отличается от unbuffered?
-5. Кто должен закрывать channel?
-6. Что произойдёт при чтении из закрытого channel?
-7. Что произойдёт при записи в закрытый channel?
-8. Как работает select?
-9. Для чего нужен default в select и чем он опасен?
-10. Как реализовать timeout?
-11. Как реализовать cancellation?
-12. Чем context cancellation отличается от closing done channel?
-13. Что такое worker pool?
-14. Что такое fan-out/fan-in?
-15. Когда использовать mutex вместо channel?
-16. Когда использовать atomic?
-17. Что находит race detector?
-18. Что race detector не гарантирует?
-19. Как сделать graceful shutdown HTTP-сервиса?
-20. Как диагностировать блокировки и latency в concurrent Go-приложении?
-```
-
-```text
-1. Что такое goroutine?
-2. Как остановить goroutine?
-3. Что такое goroutine leak?
-4. Buffered vs unbuffered channel?
-5. Кто закрывает channel?
-6. Что будет при чтении из закрытого channel?
-7. Что будет при записи в закрытый channel?
-8. Как работает select?
-9. Как сделать timeout?
-10. Как работает context cancellation?
-11. Что такое worker pool?
-12. Что такое fan-out/fan-in?
-13. Когда использовать mutex вместо channel?
-14. Что проверяет race detector?
-15. Как избежать unbounded concurrency?
-```
