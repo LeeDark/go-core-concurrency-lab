@@ -158,6 +158,7 @@ It covers:
 - processing all submitted jobs;
 - preserving job-level errors in `Result.Err`;
 - closing `results` after workers finish;
+- keeping `results` open while a worker is still handling a job;
 - normalizing non-positive `workerCount` to one worker.
 
 Use only targeted commands for this lab:
@@ -183,6 +184,111 @@ go test -race ./06-worker-pool-v1/workerpool
 - pool closes `results`;
 - caller never closes `results`;
 - individual workers never close `results`.
+
+## Lab 2: Close Rules
+
+This lab is about what closing a channel means and who is allowed to do it. It does not add cancellation, timeouts, or a new pool API.
+
+### Rules
+
+1. `close(ch)` means that no more values will be sent on `ch`. It is a completion signal, not resource cleanup.
+2. The sending side usually closes a channel, because it knows when production is finished.
+3. A receiver should not close a channel it does not own.
+4. A receive from a closed channel first drains buffered values. Later receives return the zero value with `ok == false`.
+5. Sending to a closed channel panics. Closing an already closed channel also panics.
+6. Sending to or receiving from a `nil` channel blocks forever.
+
+Closing is not needed for garbage collection. A channel that is no longer reachable can be collected whether it is open or closed.
+
+### Small examples
+
+The producer closes the channel it owns after sending all values:
+
+```go
+jobs := make(chan Job)
+
+go func() {
+	defer close(jobs)
+
+	for _, job := range submittedJobs {
+		jobs <- job
+	}
+}()
+```
+
+Use the comma-ok form when a zero value must be distinguished from a closed channel:
+
+```go
+value, ok := <-ch
+if !ok {
+	// ch is closed and drained
+}
+```
+
+`range` uses the same rule: it receives buffered values first and then stops when the channel is closed and drained.
+
+The following example intentionally panics. `recover` is used only to demonstrate the rule; it is not a normal way to handle channel ownership mistakes:
+
+```go
+ch := make(chan int)
+close(ch)
+
+func() {
+	defer func() {
+		fmt.Println(recover()) // send on closed channel
+	}()
+
+	ch <- 1
+}()
+```
+
+The following examples intentionally block forever and must not be used as normal program flow:
+
+```go
+ch := make(chan int)
+ch <- 1 // no receiver: deadlock
+
+var nilCh chan int
+<-nilCh // nil channel: blocks forever
+```
+
+### Applying the rules to this pool
+
+```text
+caller      -> sends jobs and closes jobs
+workers     -> receive jobs; never close jobs
+workers     -> send results
+coordinator -> waits for every worker, then closes results
+caller      -> receives results; never closes results
+```
+
+When the caller closes `jobs`, each worker finishes its `range jobs` loop after draining any buffered jobs. A worker must not close `results`: it cannot know whether the other workers still have results to send.
+
+The coordinator is the one place that knows all workers have finished. It calls `wg.Wait()` and then closes `results` exactly once. The caller can therefore safely use `for result := range results`.
+
+If multiple goroutines send to the same channel, they must coordinate channel closure. No individual sender should close the channel unless it can prove that every sender is finished.
+
+### Interview checkpoints
+
+1. Who closes `jobs`?
+
+   The caller, because it owns sending jobs.
+
+2. Who closes `results`?
+
+   The pool coordinator, after `wg.Wait()` confirms that every worker has exited.
+
+3. Why should a worker not close `results`?
+
+   One worker cannot know whether another worker will send another result.
+
+4. What happens when a worker ranges over closed `jobs`?
+
+   It receives buffered jobs first and then exits the loop.
+
+5. What happens if the consumer stops reading `results`?
+
+   Workers can block while sending. They cannot exit, so the `WaitGroup` cannot finish and `results` cannot be closed. Worker Pool v1 documents this behavior; cancellation belongs to v2.
 
 ## Small Demo Flow
 

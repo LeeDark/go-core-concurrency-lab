@@ -309,6 +309,8 @@ close(results) after Wait returns
 
 No individual worker can close `results`, because it does not know whether the other workers have finished sending.
 
+`results` is not closed merely because `jobs` is closed. It stays open until every worker has exited. The coordinator closes it only after `wg.Wait()` returns.
+
 The normal flow is:
 
 ```text
@@ -356,6 +358,7 @@ The tests verify:
 - all submitted jobs are processed;
 - job errors remain in `Result.Err`;
 - `results` closes after all workers finish;
+- `results` remains open while a worker is still handling a job;
 - a non-positive worker count becomes one worker.
 
 Use targeted commands for this lab:

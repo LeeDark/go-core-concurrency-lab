@@ -116,6 +116,51 @@ func TestPoolClosesResults(t *testing.T) {
 	}
 }
 
+func TestPoolKeepsResultsOpenUntilWorkerExits(t *testing.T) {
+	jobs := make(chan Job)
+	workerStarted := make(chan struct{})
+	releaseWorker := make(chan struct{})
+
+	results := Run(1, jobs, func(job Job) Result {
+		close(workerStarted)
+		<-releaseWorker
+
+		return Result{JobID: job.ID}
+	})
+
+	go func() {
+		defer close(jobs)
+		jobs <- Job{ID: 1}
+	}()
+
+	<-workerStarted
+
+	select {
+	case _, ok := <-results:
+		if !ok {
+			t.Fatal("results closed before the worker exited")
+		}
+		t.Fatal("received a result before the worker was released")
+	default:
+		// The worker is still handling the job, so results must remain open and empty.
+	}
+
+	close(releaseWorker)
+
+	result, ok := <-results
+	if !ok {
+		t.Fatal("results closed before receiving the worker result")
+	}
+	if result.JobID != 1 {
+		t.Fatalf("result job ID = %d, want 1", result.JobID)
+	}
+
+	_, ok = <-results
+	if ok {
+		t.Fatal("results channel is still open after the worker exited")
+	}
+}
+
 func TestPoolNormalizesNonPositiveWorkerCount(t *testing.T) {
 	jobs := make(chan Job)
 	results := Run(0, jobs, func(job Job) Result {
