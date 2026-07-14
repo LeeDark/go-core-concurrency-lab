@@ -48,13 +48,14 @@ The private study plan pairs core topics with concurrency labs:
 | Step 6: generics, tooling, workspaces | Step 12: race detector |
 
 The current priorities group that path into phases. Phase 1, Slices, is finished and needs review.
-The current work is Phase 2, Worker Pool v1. See [`PLAN.md`](PLAN.md) for the full roadmap.
+Phase 2, Worker Pool v1, is finished and closed. The current work is Phase 3, Maps. See
+[`PLAN.md`](PLAN.md) for the full roadmap.
 
 | Phase | Topic                                           | Status                   |
 |-------|-------------------------------------------------|--------------------------|
 | 1     | Slices                                          | Finished, needs review   |
-| 2     | Worker Pool v1                                  | Current                  |
-| 3     | Maps                                            | Planned                  |
+| 2     | Worker Pool v1                                  | Finished, closed         |
+| 3     | Maps                                            | Current                  |
 | 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
 | 5     | Race detector, memory model, and runtime        | Planned                  |
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |
@@ -92,6 +93,9 @@ comments.
 The `slices-lab` package contains small examples and targeted tests for slice behavior.
 
 ### Worker Pool v1
+
+Finished and closed. The minimal worker-pool implementation remains as a reference for later
+concurrency labs.
 
 [`06-worker-pool-v1`](06-worker-pool-v1/README.md) builds the first minimal worker pool:
 

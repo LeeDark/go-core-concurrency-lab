@@ -38,8 +38,8 @@ The current priorities group that path into phases:
 | Phase | Topic                                           | Status                   |
 |-------|-------------------------------------------------|--------------------------|
 | 1     | Slices                                          | Finished, needs review   |
-| 2     | Worker Pool v1                                  | Current                  |
-| 3     | Maps                                            | Planned                  |
+| 2     | Worker Pool v1                                  | Finished, closed         |
+| 3     | Maps                                            | Current                  |
 | 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
 | 5     | Race detector, memory model, and runtime        | Planned                  |
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |
@@ -77,7 +77,7 @@ Review checklist:
 
 ## Phase 2: Worker Pool v1
 
-Current work.
+Finished and closed.
 
 Focus:
 
@@ -99,6 +99,8 @@ Stop line:
   graceful shutdown, or advanced error policy here.
 
 ## Phase 3: Maps
+
+Current work.
 
 Focus:
 

@@ -6,7 +6,9 @@ This repository is a Go Core and Concurrency learning project.
 
 Phase 1, Slices, is finished and needs review.
 
-The current work is Phase 2, Worker Pool v1.
+Phase 2, Worker Pool v1, is finished and closed.
+
+The current work is Phase 3, Maps.
 
 Use `PLAN.md` as the source of truth for the roadmap and phase priorities.
 
@@ -33,8 +35,8 @@ The current priorities group that path into phases:
 | Phase | Topic                                           | Status                   |
 |-------|-------------------------------------------------|--------------------------|
 | 1     | Slices                                          | Finished, needs review   |
-| 2     | Worker Pool v1                                  | Current                  |
-| 3     | Maps                                            | Planned                  |
+| 2     | Worker Pool v1                                  | Finished, closed         |
+| 3     | Maps                                            | Current                  |
 | 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
 | 5     | Race detector, memory model, and runtime        | Planned                  |
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |

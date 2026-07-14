@@ -1,5 +1,10 @@
 # Worker Pool v1
 
+## Status
+
+Finished and closed. Keep this minimal implementation as a reference; lifecycle control belongs to
+Worker Pool v2.
+
 ## Goal
 
 Build the first minimal worker pool:
