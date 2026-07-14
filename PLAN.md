@@ -37,7 +37,7 @@ The current priorities group that path into phases:
 
 | Phase | Topic                                           | Status                   |
 |-------|-------------------------------------------------|--------------------------|
-| 1     | Slices                                          | Finished, needs review   |
+| 1     | Slices                                          | Finished, closed         |
 | 2     | Worker Pool v1                                  | Finished, closed         |
 | 3     | Maps                                            | Current                  |
 | 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
@@ -49,7 +49,7 @@ The current priorities group that path into phases:
 
 ## Phase 1: Slices
 
-Finished. Review only.
+Finished and closed.
 
 Focus:
 

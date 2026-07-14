@@ -263,7 +263,9 @@ for i := range s {
 ### Пов'язана лабораторна робота
 
 Див. [`04-slices-maps-defer/slices-lab`](../04-slices-maps-defer/slices-lab) із прикладами, які можна
-запустити. Focused-перевірка пакета:
+запустити. Сім focused unit-тестів перевіряють семантику клонування, володіння вхідними даними під
+час append і видалення, а також занулення невикористаного хвоста після операцій in-place.
+Focused-перевірка пакета:
 
 ```bash
 go test ./04-slices-maps-defer/slices-lab

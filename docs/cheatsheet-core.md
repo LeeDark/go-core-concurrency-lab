@@ -264,6 +264,8 @@ it, coordinate access with synchronization or give each goroutine an independent
 ### Related lab
 
 See [`04-slices-maps-defer/slices-lab`](../04-slices-maps-defer/slices-lab) for runnable examples.
+Its seven focused unit tests cover clone semantics, input ownership during append and deletion, and
+zeroing the unused tail after in-place operations.
 Run the focused package check with:
 
 ```bash
