@@ -1,8 +1,36 @@
 # Roadmap
 
-This roadmap orders the next learning priorities. The goal is to build understanding in small steps: read the notes, write focused examples, explain the behavior, then move to the next lab.
+This roadmap records the complete study path and its current priorities. The goal is to build
+understanding in small steps: read the notes, write focused examples, explain the behavior, then
+move to the next lab.
 
 ## Study Flow
+
+The complete study path is:
+
+1. Project structure, modules, packages, visibility.
+2. Context and errors.
+3. Structs, methods, receivers, interfaces.
+4. Slices, maps, defer.
+5. Generics, tooling, workspaces.
+6. Worker Pool v1.
+7. Worker Pool v2.
+8. Pipeline v1.
+9. Pipeline v2.
+10. Shared state: mutex vs channel vs atomic.
+11. Race detector and Go memory model basics.
+
+The study plan pairs core topics with concurrency labs:
+
+| Core topic                            | Concurrency topic      |
+|---------------------------------------|------------------------|
+| Step 1: project structure             | Step 6: Worker Pool v1 |
+| Step 2: errors, context               | Step 7: Worker Pool v2 |
+| Step 3: structs, methods, interfaces  | Step 8: Pipeline v1    |
+| Step 4: slices, maps, defer           | Step 9: Pipeline v2    |
+| Step 5: generics, tooling, workspaces | Step 10: shared state  |
+
+The current priorities group that path into phases:
 
 | Phase | Topic                                           | Status                 |
 |-------|-------------------------------------------------|------------------------|
@@ -63,7 +91,8 @@ Primary docs:
 
 Stop line:
 
-- Worker Pool v1 should stay minimal. Do not add context cancellation, timeouts, leak checks, graceful shutdown, or advanced error policy here.
+- Worker Pool v1 should stay minimal. Do not add context cancellation, timeouts, leak checks,
+  graceful shutdown, or advanced error policy here.
 
 ## Phase 3: Maps
 
@@ -107,7 +136,8 @@ Primary docs:
 
 Stop line:
 
-- Keep v2 focused on lifecycle control. Do not turn it into a full service architecture with retries, metrics, tracing, persistent queues, or signal handling.
+- Keep v2 focused on lifecycle control. Do not turn it into a full service architecture with
+  retries, metrics, tracing, persistent queues, or signal handling.
 
 ## Phase 5: Race Detector, Memory Model, And Runtime
 
@@ -202,7 +232,8 @@ Planned output:
 
 ## Practice Track
 
-The `coding/` directory is separate from the main lab sequence. Use it for interview-style practice and algorithm exercises without mixing those problems into the core/concurrency roadmap.
+The `coding/` directory is separate from the main lab sequence. Use it for interview-style practice
+and algorithm exercises without mixing those problems into the core/concurrency roadmap.
 
 Current example:
 

@@ -12,16 +12,32 @@ Use `PLAN.md` as the source of truth for the roadmap and phase priorities.
 
 ## Learning Sequence
 
-Current high-level sequence:
+The complete study path is:
 
-1. Slices.
-2. Worker Pool v1.
-3. Maps.
-4. Defer, errors, context, and Worker Pool v2.
-5. Race detector, memory model, and runtime.
-6. Types, interfaces, and Pipeline v1.
-7. Structure and Pipeline v2.
-8. Generics, tooling, workspaces, and shared state.
+1. Project structure, modules, packages, visibility.
+2. Context and errors.
+3. Structs, methods, receivers, interfaces.
+4. Slices, maps, defer.
+5. Generics, tooling, workspaces.
+6. Worker Pool v1.
+7. Worker Pool v2.
+8. Pipeline v1.
+9. Pipeline v2.
+10. Shared state: mutex vs channel vs atomic.
+11. Race detector and Go memory model basics.
+
+The current priorities group that path into phases:
+
+| Phase | Topic                                           | Status                 |
+|-------|-------------------------------------------------|------------------------|
+| 1     | Slices                                          | Finished, needs review |
+| 2     | Worker Pool v1                                  | Current                |
+| 3     | Maps                                            | Planned                |
+| 4     | Defer, errors, context, and Worker Pool v2      | Planned                |
+| 5     | Race detector, memory model, and runtime        | Planned                |
+| 6     | Types, interfaces, and Pipeline v1              | Planned                |
+| 7     | Structure and Pipeline v2                       | Planned                |
+| 8     | Generics, tooling, workspaces, and shared state | Planned                |
 
 The working style is:
 
@@ -53,4 +69,5 @@ Worker Pool v1 should not include:
 
 Those belong to Worker Pool v2.
 
-For this project, broad test runs should be opt-in. Prefer review, small examples, and targeted manual reasoning unless explicit test execution is requested.
+For this project, broad test runs should be opt-in. Prefer review, small examples, and targeted
+manual reasoning unless explicit test execution is requested.
