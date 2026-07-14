@@ -9,39 +9,42 @@ move to the next lab.
 The complete study path is:
 
 1. Project structure, modules, packages, visibility.
-2. Context and errors.
-3. Structs, methods, receivers, interfaces.
-4. Slices, maps, defer.
-5. Generics, tooling, workspaces.
-6. Worker Pool v1.
-7. Worker Pool v2.
-8. Pipeline v1.
-9. Pipeline v2.
-10. Shared state: mutex vs channel vs atomic.
-11. Race detector and Go memory model basics.
+2. Go Core.
+3. Context and errors.
+4. Structs, methods, receivers, interfaces.
+5. Slices, maps, defer.
+6. Generics, tooling, workspaces.
+7. Worker Pool v1.
+8. Worker Pool v2.
+9. Pipeline v1.
+10. Pipeline v2.
+11. Shared state: mutex vs channel vs atomic.
+12. Race detector and Go memory model basics.
 
 The study plan pairs core topics with concurrency labs:
 
 | Core topic                            | Concurrency topic      |
 |---------------------------------------|------------------------|
-| Step 1: project structure             | Step 6: Worker Pool v1 |
-| Step 2: errors, context               | Step 7: Worker Pool v2 |
-| Step 3: structs, methods, interfaces  | Step 8: Pipeline v1    |
-| Step 4: slices, maps, defer           | Step 9: Pipeline v2    |
-| Step 5: generics, tooling, workspaces | Step 10: shared state  |
+| Step 1: project structure             | Step 7: Worker Pool v1 |
+| Step 2: Go Core                       | Step 8: Worker Pool v2 |
+| Step 3: errors, context               | Step 9: Pipeline v1    |
+| Step 4: structs, methods, interfaces  | Step 10: Pipeline v2   |
+| Step 5: slices, maps, defer           | Step 11: shared state  |
+| Step 6: generics, tooling, workspaces | Step 12: race detector |
 
 The current priorities group that path into phases:
 
-| Phase | Topic                                           | Status                 |
-|-------|-------------------------------------------------|------------------------|
-| 1     | Slices                                          | Finished, needs review |
-| 2     | Worker Pool v1                                  | Current                |
-| 3     | Maps                                            | Planned                |
-| 4     | Defer, errors, context, and Worker Pool v2      | Planned                |
-| 5     | Race detector, memory model, and runtime        | Planned                |
-| 6     | Types, interfaces, and Pipeline v1              | Planned                |
-| 7     | Structure and Pipeline v2                       | Planned                |
-| 8     | Generics, tooling, workspaces, and shared state | Planned                |
+| Phase | Topic                                           | Status                   |
+|-------|-------------------------------------------------|--------------------------|
+| 1     | Slices                                          | Finished, needs review   |
+| 2     | Worker Pool v1                                  | Current                  |
+| 3     | Maps                                            | Planned                  |
+| 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
+| 5     | Race detector, memory model, and runtime        | Planned                  |
+| 6     | Types, interfaces, and Pipeline v1              | Planned                  |
+| 7     | Structure and Pipeline v2                       | Planned                  |
+| 8     | Generics, tooling, workspaces, and shared state | Planned                  |
+| 9     | Go Core                                         | Planned, lowest priority |
 
 ## Phase 1: Slices
 
@@ -229,6 +232,10 @@ Planned output:
 
 - `08-generics-tooling-workspaces-shared-state/README.md`
 - examples for mutex, channel ownership, and atomic counters.
+
+## Phase 9: Go Core
+
+Planned with the lowest priority. Define the detailed scope before starting this phase.
 
 ## Practice Track
 

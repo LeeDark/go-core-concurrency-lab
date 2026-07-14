@@ -6,7 +6,7 @@ This repository is a Go Core and Concurrency learning project.
 
 Phase 1, Slices, is finished and needs review.
 
-Current work is Phase 2, Worker Pool v1.
+The current work is Phase 2, Worker Pool v1.
 
 Use `PLAN.md` as the source of truth for the roadmap and phase priorities.
 
@@ -15,29 +15,31 @@ Use `PLAN.md` as the source of truth for the roadmap and phase priorities.
 The complete study path is:
 
 1. Project structure, modules, packages, visibility.
-2. Context and errors.
-3. Structs, methods, receivers, interfaces.
-4. Slices, maps, defer.
-5. Generics, tooling, workspaces.
-6. Worker Pool v1.
-7. Worker Pool v2.
-8. Pipeline v1.
-9. Pipeline v2.
-10. Shared state: mutex vs channel vs atomic.
-11. Race detector and Go memory model basics.
+2. Go Core.
+3. Context and errors.
+4. Structs, methods, receivers, interfaces.
+5. Slices, maps, defer.
+6. Generics, tooling, workspaces.
+7. Worker Pool v1.
+8. Worker Pool v2.
+9. Pipeline v1.
+10. Pipeline v2.
+11. Shared state: mutex vs channel vs atomic.
+12. Race detector and Go memory model basics.
 
 The current priorities group that path into phases:
 
-| Phase | Topic                                           | Status                 |
-|-------|-------------------------------------------------|------------------------|
-| 1     | Slices                                          | Finished, needs review |
-| 2     | Worker Pool v1                                  | Current                |
-| 3     | Maps                                            | Planned                |
-| 4     | Defer, errors, context, and Worker Pool v2      | Planned                |
-| 5     | Race detector, memory model, and runtime        | Planned                |
-| 6     | Types, interfaces, and Pipeline v1              | Planned                |
-| 7     | Structure and Pipeline v2                       | Planned                |
-| 8     | Generics, tooling, workspaces, and shared state | Planned                |
+| Phase | Topic                                           | Status                   |
+|-------|-------------------------------------------------|--------------------------|
+| 1     | Slices                                          | Finished, needs review   |
+| 2     | Worker Pool v1                                  | Current                  |
+| 3     | Maps                                            | Planned                  |
+| 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
+| 5     | Race detector, memory model, and runtime        | Planned                  |
+| 6     | Types, interfaces, and Pipeline v1              | Planned                  |
+| 7     | Structure and Pipeline v2                       | Planned                  |
+| 8     | Generics, tooling, workspaces, and shared state | Planned                  |
+| 9     | Go Core                                         | Planned, lowest priority |
 
 The working style is:
 
