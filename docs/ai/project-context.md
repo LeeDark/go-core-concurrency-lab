@@ -26,6 +26,7 @@ The complete study path is:
 10. Pipeline v2.
 11. Shared state: mutex vs channel vs atomic.
 12. Race detector and Go memory model basics.
+13. Book track: *Learning Functional Programming in Go* (Sheehan, 2017), with discussion of modern generics.
 
 The current priorities group that path into phases:
 

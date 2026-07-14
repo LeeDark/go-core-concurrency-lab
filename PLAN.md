@@ -20,6 +20,7 @@ The complete study path is:
 10. Pipeline v2.
 11. Shared state: mutex vs channel vs atomic.
 12. Race detector and Go memory model basics.
+13. Book track: *Learning Functional Programming in Go* (Sheehan, 2017), with discussion of modern generics.
 
 The study plan pairs core topics with concurrency labs:
 
@@ -236,6 +237,23 @@ Planned output:
 ## Phase 9: Go Core
 
 Planned with the lowest priority. Define the detailed scope before starting this phase.
+
+## Book Track: Functional Programming In Go
+
+Step 13 is separate from the phase priorities and may be studied first.
+
+Read *Learning Functional Programming in Go* by Lex Sheehan (2017) as a dedicated book track. The book predates Go generics, so discuss its `interface{}`-based collection helpers in terms of modern type parameters.
+
+Short reading plan:
+
+1. **Pure functional programming in Go**: imperative versus declarative style, pure functions, recursion, memoization, closures, tests, and benchmarks.
+2. **Manipulating collections**: iteration, composition, `map`, `filter`, `reduce`, predicates, and the book's pre-generics collection abstractions.
+3. **Higher-order functions**: first-class functions, function composition, currying, generators, and the examples that use goroutines and `WaitGroup`.
+4. **SOLID design in Go**: connect functional composition with interfaces, embedding, error handling, and MapReduce.
+5. **Decoration and dependency injection**: interface composition, `io.Reader`/`io.Writer`, decorator, strategy, inversion of control, and lifecycle coordination with channels.
+6. **Functional ideas at architecture level**: state management, dependency direction, boundaries, layers, observer, and dependency injection.
+
+After each practical block, write a short comparison: what remains idiomatic Go, what modern generics simplify, and where a direct loop or ordinary interface is clearer than a functional abstraction. Do not treat recursion, reflection, monads, or generic collection helpers as defaults; the interview goal is to explain the trade-off.
 
 ## Practice Track
 
