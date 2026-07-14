@@ -47,13 +47,13 @@ The private study plan pairs core topics with concurrency labs:
 | Step 5: slices, maps, defer           | Step 11: shared state  |
 | Step 6: generics, tooling, workspaces | Step 12: race detector |
 
-The current priorities group that path into phases. Phase 1, Slices, is finished and needs review.
+The current priorities group that path into phases. Phase 1, Slices, is finished and closed.
 Phase 2, Worker Pool v1, is finished and closed. The current work is Phase 3, Maps. See
 [`PLAN.md`](PLAN.md) for the full roadmap.
 
 | Phase | Topic                                           | Status                   |
 |-------|-------------------------------------------------|--------------------------|
-| 1     | Slices                                          | Finished, needs review   |
+| 1     | Slices                                          | Finished, closed         |
 | 2     | Worker Pool v1                                  | Finished, closed         |
 | 3     | Maps                                            | Current                  |
 | 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
@@ -130,8 +130,8 @@ control:
 
 ## Notes And Cheatsheets
 
-- [`docs/cheetsheet-core.md`](docs/cheetsheet-core.md) contains core Go notes.
-- [`docs/cheetsheet-concurrency.md`](docs/cheetsheet-concurrency.md) contains concurrency,
+- [`docs/cheatsheet-core.md`](docs/cheatsheet-core.md) contains core Go notes.
+- [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md) contains concurrency,
   goroutine, channel, worker-pool, scheduler, and interview notes.
 - [`go-release-history.md`](go-release-history.md) tracks selected Go release changes.
 

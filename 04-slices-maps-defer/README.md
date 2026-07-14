@@ -2,7 +2,7 @@
 
 This lab covers core Go collection and cleanup topics from the roadmap.
 
-- Phase 1: Slices - finished, needs review.
+- Phase 1: Slices - finished, closed.
 - Phase 3: Maps - current.
 - Phase 4: Defer - planned.
 
@@ -10,11 +10,11 @@ This lab covers core Go collection and cleanup topics from the roadmap.
 
 - [Root README](../README.md)
 - [Roadmap](../PLAN.md)
-- [Core cheatsheet](../docs/cheetsheet-core.md)
+- [Core cheatsheet](../docs/cheatsheet-core.md)
 
 ## Current Status
 
-Slices are implemented as focused examples and tests under `slices-lab`.
+Slices are implemented as focused examples and tests under `slices-lab`. Phase 1 is closed.
 
 Maps are the current topic; defer is still planned. Keep future changes small and separate: do not
 mix map examples, defer examples, and slice review fixes in one broad rewrite.
@@ -48,7 +48,7 @@ Review checklist:
 Recommended reading:
 
 - [Go Slices: usage and internals](https://go.dev/blog/slices-intro)
-- [Core cheatsheet: Slices](../docs/cheetsheet-core.md#slices)
+- [Core cheatsheet: Slices](../docs/cheatsheet-core.md#slices)
 
 ## Maps
 
@@ -80,6 +80,7 @@ Planned focus:
   main.go
   slices-lab/
     append_copy.go
+    append_copy_test.go
     helpers.go
     memory_leak.go
     mistakes.go
@@ -88,6 +89,16 @@ Planned focus:
 ```
 
 `slices-lab` contains focused slice examples and tests. Keep examples small enough to explain line by line.
+
+### Focused Unit Tests
+
+`append_copy_test.go` contains seven focused tests for slice ownership and mutation behavior:
+
+- preserving `nil` and creating an independent clone;
+- the empty-to-`nil` behavior of `CloneSliceAppend`;
+- returning an appended slice without modifying the input;
+- in-place versus independent deletion;
+- clearing the unused tail after in-place deletion and filtering.
 
 ## Targeted Checks
 
