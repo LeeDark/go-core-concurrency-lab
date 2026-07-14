@@ -10,7 +10,7 @@ This lab covers core Go collection and cleanup topics from the roadmap.
 
 - [Root README](../README.md)
 - [Roadmap](../PLAN.md)
-- [Core cheatsheet](../docs/cheetsheet-core.md)
+- [Core cheatsheet](../docs/cheatsheet-core.md)
 
 ## Current Status
 
@@ -48,7 +48,7 @@ Review checklist:
 Recommended reading:
 
 - [Go Slices: usage and internals](https://go.dev/blog/slices-intro)
-- [Core cheatsheet: Slices](../docs/cheetsheet-core.md#slices)
+- [Core cheatsheet: Slices](../docs/cheatsheet-core.md#slices)
 
 ## Maps
 

@@ -130,8 +130,8 @@ control:
 
 ## Notes And Cheatsheets
 
-- [`docs/cheetsheet-core.md`](docs/cheetsheet-core.md) contains core Go notes.
-- [`docs/cheetsheet-concurrency.md`](docs/cheetsheet-concurrency.md) contains concurrency,
+- [`docs/cheatsheet-core.md`](docs/cheatsheet-core.md) contains core Go notes.
+- [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md) contains concurrency,
   goroutine, channel, worker-pool, scheduler, and interview notes.
 - [`go-release-history.md`](go-release-history.md) tracks selected Go release changes.
 

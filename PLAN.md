@@ -64,7 +64,7 @@ Focus:
 Primary docs:
 
 - [`04-slices-maps-defer/README.md`](04-slices-maps-defer/README.md)
-- [`docs/cheetsheet-core.md`](docs/cheetsheet-core.md)
+- [`docs/cheatsheet-core.md`](docs/cheatsheet-core.md)
 
 Review checklist:
 
@@ -91,7 +91,7 @@ Focus:
 Primary docs:
 
 - [`06-worker-pool-v1/README.md`](06-worker-pool-v1/README.md)
-- [`docs/cheetsheet-concurrency.md`](docs/cheetsheet-concurrency.md)
+- [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md)
 
 Stop line:
 
@@ -138,7 +138,7 @@ Concurrency focus:
 Primary docs:
 
 - [`07-worker-pool-v2/README.md`](07-worker-pool-v2/README.md)
-- [`docs/cheetsheet-concurrency.md`](docs/cheetsheet-concurrency.md)
+- [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md)
 
 Stop line:
 
@@ -160,7 +160,7 @@ Focus:
 
 Primary docs:
 
-- [`docs/cheetsheet-concurrency.md`](docs/cheetsheet-concurrency.md)
+- [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md)
 - [`go-release-history.md`](go-release-history.md)
 
 Planned output:
@@ -209,7 +209,7 @@ Concurrency focus:
 Primary docs:
 
 - [`01-project-structure/README.md`](01-project-structure/README.md)
-- [`docs/cheetsheet-concurrency.md`](docs/cheetsheet-concurrency.md)
+- [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md)
 
 Planned output:
 
