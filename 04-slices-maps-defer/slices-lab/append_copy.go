@@ -17,7 +17,7 @@ func CloneSliceAppend[T any](s []T) []T {
 	return append([]T(nil), s...)
 }
 
-// AppendSafe appends the provided values to the slice in a thread-safe manner, ensuring no modification to the input slice.
+// AppendSafe returns a new slice containing s followed by values without modifying s.
 func AppendSafe[T any](s []T, values ...T) []T {
 	out := make([]T, 0, len(s)+len(values))
 	out = append(out, s...)
