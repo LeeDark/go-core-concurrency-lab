@@ -3,7 +3,7 @@
 This lab covers core Go collection and cleanup topics from the roadmap.
 
 - Phase 1: Slices - finished, needs review.
-- Phase 3: Maps - planned.
+- Phase 3: Maps - current.
 - Phase 4: Defer - planned.
 
 ## Links
@@ -16,7 +16,8 @@ This lab covers core Go collection and cleanup topics from the roadmap.
 
 Slices are implemented as focused examples and tests under `slices-lab`.
 
-Maps and defer are still planned. Keep future changes small and separate: do not mix map examples, defer examples, and slice review fixes in one broad rewrite.
+Maps are the current topic; defer is still planned. Keep future changes small and separate: do not
+mix map examples, defer examples, and slice review fixes in one broad rewrite.
 
 ## Slices
 
@@ -51,7 +52,7 @@ Recommended reading:
 
 ## Maps
 
-Planned focus:
+Current focus:
 
 - create maps with literals and `make`;
 - read, insert, update, and delete keys;

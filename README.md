@@ -2,7 +2,9 @@
 
 This repository is a learning lab for Go core language topics and concurrency patterns.
 
-It is not a production library. The goal is to study Go concepts in small, reviewable steps, write focused examples, keep notes, and build toward practical concurrency patterns such as worker pools and pipelines.
+It is not a production library. The goal is to study Go concepts in small, reviewable steps, write
+focused examples, keep notes, and build toward practical concurrency patterns such as worker pools
+and pipelines.
 
 Module:
 
@@ -18,29 +20,48 @@ Go version:
 
 ## Learning Sequence
 
-The current study path is:
+The main study path is:
 
-1. Slices.
-2. Worker Pool v1.
-3. Maps.
-4. Defer, errors, context, and Worker Pool v2.
-5. Race detector, memory model, and runtime.
-6. Types, interfaces, and Pipeline v1.
-7. Structure and Pipeline v2.
-8. Generics, tooling, workspaces, and shared state.
+1. Project structure, modules, packages, visibility.
+2. Go Core.
+3. Context and errors.
+4. Structs, methods, receivers, interfaces.
+5. Slices, maps, defer.
+6. Generics, tooling, workspaces.
+7. Worker Pool v1.
+8. Worker Pool v2.
+9. Pipeline v1.
+10. Pipeline v2.
+11. Shared state: mutex vs channel vs atomic.
+12. Race detector and Go memory model basics.
+13. Book track: *Learning Functional Programming in Go* (Sheehan, 2017), with discussion of modern generics.
 
-Phase 1, Slices, is finished and needs review. The current work is Phase 2, Worker Pool v1. See [`PLAN.md`](PLAN.md) for the full roadmap.
+The private study plan pairs core topics with concurrency labs:
 
-| Phase | Topic                                           | Status                 |
-|-------|-------------------------------------------------|------------------------|
-| 1     | Slices                                          | Finished, needs review |
-| 2     | Worker Pool v1                                  | Current                |
-| 3     | Maps                                            | Planned                |
-| 4     | Defer, errors, context, and Worker Pool v2      | Planned                |
-| 5     | Race detector, memory model, and runtime        | Planned                |
-| 6     | Types, interfaces, and Pipeline v1              | Planned                |
-| 7     | Structure and Pipeline v2                       | Planned                |
-| 8     | Generics, tooling, workspaces, and shared state | Planned                |
+| Core topic                            | Concurrency topic      |
+|---------------------------------------|------------------------|
+| Step 1: project structure             | Step 7: Worker Pool v1 |
+| Step 2: Go Core                       | Step 8: Worker Pool v2 |
+| Step 3: errors, context               | Step 9: Pipeline v1    |
+| Step 4: structs, methods, interfaces  | Step 10: Pipeline v2   |
+| Step 5: slices, maps, defer           | Step 11: shared state  |
+| Step 6: generics, tooling, workspaces | Step 12: race detector |
+
+The current priorities group that path into phases. Phase 1, Slices, is finished and needs review.
+Phase 2, Worker Pool v1, is finished and closed. The current work is Phase 3, Maps. See
+[`PLAN.md`](PLAN.md) for the full roadmap.
+
+| Phase | Topic                                           | Status                   |
+|-------|-------------------------------------------------|--------------------------|
+| 1     | Slices                                          | Finished, needs review   |
+| 2     | Worker Pool v1                                  | Finished, closed         |
+| 3     | Maps                                            | Current                  |
+| 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
+| 5     | Race detector, memory model, and runtime        | Planned                  |
+| 6     | Types, interfaces, and Pipeline v1              | Planned                  |
+| 7     | Structure and Pipeline v2                       | Planned                  |
+| 8     | Generics, tooling, workspaces, and shared state | Planned                  |
+| 9     | Go Core                                         | Planned, lowest priority |
 
 ## Repository Layout
 
@@ -60,15 +81,21 @@ PLAN.md                     Roadmap for core topics and concurrency labs.
 
 ### Project Structure
 
-[`01-project-structure`](01-project-structure/README.md) covers module layout, package naming, exported and unexported identifiers, `internal` packages, command packages, and documentation comments.
+[`01-project-structure`](01-project-structure/README.md) covers module layout, package naming,
+exported and unexported identifiers, `internal` packages, command packages, and documentation
+comments.
 
 ### Slices, Maps, Defer
 
-[`04-slices-maps-defer`](04-slices-maps-defer/README.md) focuses on slice internals: backing arrays, `len`, `cap`, `append`, `copy`, nil vs empty slices, aliasing, and common mistakes.
+[`04-slices-maps-defer`](04-slices-maps-defer/README.md) focuses on slice internals: backing arrays,
+`len`, `cap`, `append`, `copy`, nil vs empty slices, aliasing, and common mistakes.
 
 The `slices-lab` package contains small examples and targeted tests for slice behavior.
 
 ### Worker Pool v1
+
+Finished and closed. The minimal worker-pool implementation remains as a reference for later
+concurrency labs.
 
 [`06-worker-pool-v1`](06-worker-pool-v1/README.md) builds the first minimal worker pool:
 
@@ -85,11 +112,13 @@ Worker Pool v1 intentionally stays small:
 - clear channel ownership;
 - `results` closes only after all workers finish.
 
-It does not include context cancellation, timeouts, graceful shutdown, leak checks, or advanced error policy. Those belong to Worker Pool v2.
+It does not include context cancellation, timeouts, graceful shutdown, leak checks, or advanced
+error policy. Those belong to Worker Pool v2.
 
 ### Worker Pool v2
 
-[`07-worker-pool-v2`](07-worker-pool-v2/README.md) extends the v1 mental model with lifecycle control:
+[`07-worker-pool-v2`](07-worker-pool-v2/README.md) extends the v1 mental model with lifecycle
+control:
 
 - `context.Context`;
 - cancellation while waiting for jobs;
@@ -102,7 +131,8 @@ It does not include context cancellation, timeouts, graceful shutdown, leak chec
 ## Notes And Cheatsheets
 
 - [`docs/cheetsheet-core.md`](docs/cheetsheet-core.md) contains core Go notes.
-- [`docs/cheetsheet-concurrency.md`](docs/cheetsheet-concurrency.md) contains concurrency, goroutine, channel, worker-pool, scheduler, and interview notes.
+- [`docs/cheetsheet-concurrency.md`](docs/cheetsheet-concurrency.md) contains concurrency,
+  goroutine, channel, worker-pool, scheduler, and interview notes.
 - [`go-release-history.md`](go-release-history.md) tracks selected Go release changes.
 
 ## Running Focused Checks
@@ -136,4 +166,5 @@ This repo is optimized for learning:
 - keep Worker Pool v1 minimal before moving lifecycle concerns into Worker Pool v2;
 - use targeted tests or manual reasoning depending on the lab.
 
-The main question for each lab is not only "does it run?", but also "can the behavior be explained clearly in an interview or code review?".
+The main question for each lab is not only "does it run?", but also "can the behavior be explained
+clearly in an interview or code review?".

@@ -6,22 +6,43 @@ This repository is a Go Core and Concurrency learning project.
 
 Phase 1, Slices, is finished and needs review.
 
-Current work is Phase 2, Worker Pool v1.
+Phase 2, Worker Pool v1, is finished and closed.
+
+The current work is Phase 3, Maps.
 
 Use `PLAN.md` as the source of truth for the roadmap and phase priorities.
 
 ## Learning Sequence
 
-Current high-level sequence:
+The complete study path is:
 
-1. Slices.
-2. Worker Pool v1.
-3. Maps.
-4. Defer, errors, context, and Worker Pool v2.
-5. Race detector, memory model, and runtime.
-6. Types, interfaces, and Pipeline v1.
-7. Structure and Pipeline v2.
-8. Generics, tooling, workspaces, and shared state.
+1. Project structure, modules, packages, visibility.
+2. Go Core.
+3. Context and errors.
+4. Structs, methods, receivers, interfaces.
+5. Slices, maps, defer.
+6. Generics, tooling, workspaces.
+7. Worker Pool v1.
+8. Worker Pool v2.
+9. Pipeline v1.
+10. Pipeline v2.
+11. Shared state: mutex vs channel vs atomic.
+12. Race detector and Go memory model basics.
+13. Book track: *Learning Functional Programming in Go* (Sheehan, 2017), with discussion of modern generics.
+
+The current priorities group that path into phases:
+
+| Phase | Topic                                           | Status                   |
+|-------|-------------------------------------------------|--------------------------|
+| 1     | Slices                                          | Finished, needs review   |
+| 2     | Worker Pool v1                                  | Finished, closed         |
+| 3     | Maps                                            | Current                  |
+| 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
+| 5     | Race detector, memory model, and runtime        | Planned                  |
+| 6     | Types, interfaces, and Pipeline v1              | Planned                  |
+| 7     | Structure and Pipeline v2                       | Planned                  |
+| 8     | Generics, tooling, workspaces, and shared state | Planned                  |
+| 9     | Go Core                                         | Planned, lowest priority |
 
 The working style is:
 
@@ -53,4 +74,5 @@ Worker Pool v1 should not include:
 
 Those belong to Worker Pool v2.
 
-For this project, broad test runs should be opt-in. Prefer review, small examples, and targeted manual reasoning unless explicit test execution is requested.
+For this project, broad test runs should be opt-in. Prefer review, small examples, and targeted
+manual reasoning unless explicit test execution is requested.

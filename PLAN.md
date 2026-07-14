@@ -1,19 +1,51 @@
 # Roadmap
 
-This roadmap orders the next learning priorities. The goal is to build understanding in small steps: read the notes, write focused examples, explain the behavior, then move to the next lab.
+This roadmap records the complete study path and its current priorities. The goal is to build
+understanding in small steps: read the notes, write focused examples, explain the behavior, then
+move to the next lab.
 
 ## Study Flow
 
-| Phase | Topic                                           | Status                 |
-|-------|-------------------------------------------------|------------------------|
-| 1     | Slices                                          | Finished, needs review |
-| 2     | Worker Pool v1                                  | Current                |
-| 3     | Maps                                            | Planned                |
-| 4     | Defer, errors, context, and Worker Pool v2      | Planned                |
-| 5     | Race detector, memory model, and runtime        | Planned                |
-| 6     | Types, interfaces, and Pipeline v1              | Planned                |
-| 7     | Structure and Pipeline v2                       | Planned                |
-| 8     | Generics, tooling, workspaces, and shared state | Planned                |
+The complete study path is:
+
+1. Project structure, modules, packages, visibility.
+2. Go Core.
+3. Context and errors.
+4. Structs, methods, receivers, interfaces.
+5. Slices, maps, defer.
+6. Generics, tooling, workspaces.
+7. Worker Pool v1.
+8. Worker Pool v2.
+9. Pipeline v1.
+10. Pipeline v2.
+11. Shared state: mutex vs channel vs atomic.
+12. Race detector and Go memory model basics.
+13. Book track: *Learning Functional Programming in Go* (Sheehan, 2017), with discussion of modern generics.
+
+The study plan pairs core topics with concurrency labs:
+
+| Core topic                            | Concurrency topic      |
+|---------------------------------------|------------------------|
+| Step 1: project structure             | Step 7: Worker Pool v1 |
+| Step 2: Go Core                       | Step 8: Worker Pool v2 |
+| Step 3: errors, context               | Step 9: Pipeline v1    |
+| Step 4: structs, methods, interfaces  | Step 10: Pipeline v2   |
+| Step 5: slices, maps, defer           | Step 11: shared state  |
+| Step 6: generics, tooling, workspaces | Step 12: race detector |
+
+The current priorities group that path into phases:
+
+| Phase | Topic                                           | Status                   |
+|-------|-------------------------------------------------|--------------------------|
+| 1     | Slices                                          | Finished, needs review   |
+| 2     | Worker Pool v1                                  | Finished, closed         |
+| 3     | Maps                                            | Current                  |
+| 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
+| 5     | Race detector, memory model, and runtime        | Planned                  |
+| 6     | Types, interfaces, and Pipeline v1              | Planned                  |
+| 7     | Structure and Pipeline v2                       | Planned                  |
+| 8     | Generics, tooling, workspaces, and shared state | Planned                  |
+| 9     | Go Core                                         | Planned, lowest priority |
 
 ## Phase 1: Slices
 
@@ -45,7 +77,7 @@ Review checklist:
 
 ## Phase 2: Worker Pool v1
 
-Current work.
+Finished and closed.
 
 Focus:
 
@@ -63,9 +95,12 @@ Primary docs:
 
 Stop line:
 
-- Worker Pool v1 should stay minimal. Do not add context cancellation, timeouts, leak checks, graceful shutdown, or advanced error policy here.
+- Worker Pool v1 should stay minimal. Do not add context cancellation, timeouts, leak checks,
+  graceful shutdown, or advanced error policy here.
 
 ## Phase 3: Maps
+
+Current work.
 
 Focus:
 
@@ -107,7 +142,8 @@ Primary docs:
 
 Stop line:
 
-- Keep v2 focused on lifecycle control. Do not turn it into a full service architecture with retries, metrics, tracing, persistent queues, or signal handling.
+- Keep v2 focused on lifecycle control. Do not turn it into a full service architecture with
+  retries, metrics, tracing, persistent queues, or signal handling.
 
 ## Phase 5: Race Detector, Memory Model, And Runtime
 
@@ -200,9 +236,31 @@ Planned output:
 - `08-generics-tooling-workspaces-shared-state/README.md`
 - examples for mutex, channel ownership, and atomic counters.
 
+## Phase 9: Go Core
+
+Planned with the lowest priority. Define the detailed scope before starting this phase.
+
+## Book Track: Functional Programming In Go
+
+Step 13 is separate from the phase priorities and may be studied first.
+
+Read *Learning Functional Programming in Go* by Lex Sheehan (2017) as a dedicated book track. The book predates Go generics, so discuss its `interface{}`-based collection helpers in terms of modern type parameters.
+
+Short reading plan:
+
+1. **Pure functional programming in Go**: imperative versus declarative style, pure functions, recursion, memoization, closures, tests, and benchmarks.
+2. **Manipulating collections**: iteration, composition, `map`, `filter`, `reduce`, predicates, and the book's pre-generics collection abstractions.
+3. **Higher-order functions**: first-class functions, function composition, currying, generators, and the examples that use goroutines and `WaitGroup`.
+4. **SOLID design in Go**: connect functional composition with interfaces, embedding, error handling, and MapReduce.
+5. **Decoration and dependency injection**: interface composition, `io.Reader`/`io.Writer`, decorator, strategy, inversion of control, and lifecycle coordination with channels.
+6. **Functional ideas at architecture level**: state management, dependency direction, boundaries, layers, observer, and dependency injection.
+
+After each practical block, write a short comparison: what remains idiomatic Go, what modern generics simplify, and where a direct loop or ordinary interface is clearer than a functional abstraction. Do not treat recursion, reflection, monads, or generic collection helpers as defaults; the interview goal is to explain the trade-off.
+
 ## Practice Track
 
-The `coding/` directory is separate from the main lab sequence. Use it for interview-style practice and algorithm exercises without mixing those problems into the core/concurrency roadmap.
+The `coding/` directory is separate from the main lab sequence. Use it for interview-style practice
+and algorithm exercises without mixing those problems into the core/concurrency roadmap.
 
 Current example:
 
