@@ -1,5 +1,7 @@
 # Go Core Cheatsheet
 
+Translations: [Russian](cheatsheet-core.ru.md) · [Ukrainian](cheatsheet-core.ua.md).
+
 ## Slices
 
 ### Definition
@@ -227,8 +229,7 @@ intended.
 ### Concurrency
 
 Slices are not safe for concurrent mutation. If goroutines share a slice and at least one writes to
-it,
-coordinate access with synchronization or give each goroutine an independent copy.
+it, coordinate access with synchronization or give each goroutine an independent copy.
 
 ### Review questions
 
@@ -239,6 +240,26 @@ coordinate access with synchronization or give each goroutine an independent cop
 5. Why does `copy` need a destination with a non-zero length?
 6. When does nil differ from an empty slice in practice?
 7. How can a small slice retain a large allocation?
+
+### Answers to review questions
+
+1. A slice descriptor conceptually contains a pointer to its backing array, a length, and a
+   capacity.
+2. Copying or subslicing a slice normally leaves both slices pointing to the same backing array.
+   Writing an element through one slice therefore changes that array and can be visible through the
+   other.
+3. `append` may reuse the backing array when the resulting length fits within the current capacity.
+   It must allocate a new array when the capacity is insufficient.
+4. `s[low:high:max]` sets the resulting slice's length to `high-low` and its capacity to `max-low`.
+   It limits future growth through that slice, but does not copy elements or remove sharing of the
+   existing visible elements.
+5. `copy` copies only into existing destination elements, up to the smaller source or destination
+   length. A nil or zero-length destination has no elements to receive the copy.
+6. They differ when an API observes nilness, notably JSON encoding (`null` versus `[]`), or when nil
+   itself has semantic meaning. Otherwise, use `len(s) == 0` to test emptiness.
+7. A slice descriptor keeps its backing array reachable. A small subslice still points into the
+   original large array, so the garbage collector cannot reclaim that array until the subslice is no
+   longer reachable. Copy the needed elements into a new slice to release it.
 
 ### Related lab
 
