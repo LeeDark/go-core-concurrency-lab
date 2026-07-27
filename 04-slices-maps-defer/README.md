@@ -52,15 +52,18 @@ Recommended reading:
 
 ## Maps
 
-Current focus:
+Phase 3, group 1: basic operations.
+
+Learn to:
 
 - create maps with literals and `make`;
-- read, insert, update, and delete keys;
-- use the comma-ok form for lookups;
-- distinguish nil maps from empty maps;
-- understand that map iteration order is not stable;
-- use maps for counting, grouping, indexing, and set-like behavior;
-- avoid concurrent map reads/writes without synchronization.
+- read values by key;
+- insert a new key or update an existing key with `m[key] = value`;
+- delete a key with `delete`;
+- observe `len` and the zero value returned for a missing key.
+
+The comma-ok form, nil maps, iteration, common patterns, and concurrent access belong to later map
+groups.
 
 ## Defer
 
@@ -78,6 +81,10 @@ Planned focus:
 04-slices-maps-defer/
   README.md
   main.go
+  maps-lab/
+    basic.go
+    basic_test.go
+    maps.go
   slices-lab/
     append_copy.go
     append_copy_test.go
@@ -89,6 +96,9 @@ Planned focus:
 ```
 
 `slices-lab` contains focused slice examples and tests. Keep examples small enough to explain line by line.
+
+`maps-lab` contains the first focused map examples. `MapBasics` demonstrates each basic operation;
+the tests verify its observable behavior without relying on iteration order.
 
 ### Focused Unit Tests
 
@@ -106,6 +116,7 @@ Run only the focused package tests for this lab:
 
 ```bash
 go test ./04-slices-maps-defer/slices-lab
+go test ./04-slices-maps-defer/maps-lab
 ```
 
 Avoid broad test runs such as `go test ./...` unless explicitly requested.
@@ -125,10 +136,9 @@ Slices:
 Maps:
 
 1. What happens when reading a missing key?
-2. Why is the comma-ok form useful?
-3. What is the difference between a nil map and an empty map?
-4. Why should code not depend on map iteration order?
-5. Why are normal maps unsafe for concurrent read/write access?
+2. Which one assignment syntax both inserts a key and updates an existing key?
+3. What does `delete` do when the key is already absent?
+4. What does `len` measure for a map?
 
 Defer:
 

@@ -271,3 +271,67 @@ Run the focused package check with:
 ```bash
 go test ./04-slices-maps-defer/slices-lab
 ```
+
+## Maps
+
+### Basic operations
+
+A map associates comparable keys with values: `map[K]V`. Create one with a literal when its initial
+entries are known, or with `make` when it starts empty.
+
+```go
+prices := map[string]int{"apple": 10}
+stock := make(map[string]int)
+```
+
+Read a value with `m[key]`. When the key is absent, the expression returns the zero value of the
+map's value type. For `int`, that is `0`.
+
+```go
+fmt.Println(prices["apple"]) // 10
+fmt.Println(prices["pear"])  // 0
+```
+
+Use the same assignment syntax for insertion and update. An assignment to a new key inserts it; an
+assignment to an existing key replaces its value.
+
+```go
+stock["apple"] = 3 // insert
+stock["apple"] = 5 // update
+```
+
+`delete(m, key)` removes a key. It is safe to delete a key that is already absent. `len(m)` returns
+the number of entries currently stored in the map.
+
+```go
+delete(stock, "apple")
+fmt.Println(len(stock))
+```
+
+The zero value returned by a missing lookup cannot distinguish an absent key from a key explicitly
+stored with the zero value. The comma-ok lookup that solves this belongs to the next map group.
+
+### Review questions
+
+1. How can you create a map with initial entries and an empty writable map?
+2. What happens when `m[key]` reads an absent key?
+3. Which operation inserts a new key and updates an existing key?
+4. What happens when `delete` receives an absent key?
+5. What does `len(m)` return?
+
+### Answers to review questions
+
+1. Use a literal such as `map[string]int{"apple": 10}` for initial entries, and `make(map[string]int)` for an empty writable map.
+2. It returns the zero value of the map's value type.
+3. `m[key] = value` inserts if the key is absent and replaces the value if it exists.
+4. Nothing; deleting an absent key is safe.
+5. The current number of key-value entries.
+
+### Related lab
+
+See [`04-slices-maps-defer/maps-lab`](../04-slices-maps-defer/maps-lab) for runnable basic map
+examples and focused unit tests.
+
+```bash
+go test ./04-slices-maps-defer/maps-lab
+```
