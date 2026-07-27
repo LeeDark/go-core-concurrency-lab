@@ -370,10 +370,85 @@ map has entries; test `m == nil` only when nilness is meaningful to the API.
 4. It panics at runtime.
 5. Use `len(m) == 0` for an emptiness check; use `m == nil` only if the API gives nil a separate meaning.
 
+### Iteration order
+
+The order produced by `range` over a map is not specified and must not be used as program logic or
+test expectation. Collect keys and sort them when output needs a stable order.
+
+```go
+keys := make([]string, 0, len(counts))
+for key := range counts {
+	keys = append(keys, key)
+}
+sort.Strings(keys)
+```
+
+Tests for an unordered result should compare membership and length, or compare a normalized sorted
+result. Do not make a test pass by assuming one observed map order is permanent.
+
+### Common patterns
+
+Counting uses the zero value of an integer, so incrementing a new key works without a preliminary
+lookup.
+
+```go
+counts := make(map[string]int)
+for _, word := range words {
+	counts[word]++
+}
+```
+
+Grouping uses a slice as the map value. `append` works on a nil slice, so the first value in a group
+needs no special case. This example groups by byte length.
+
+```go
+groups := make(map[int][]string)
+for _, word := range words {
+	groups[len(word)] = append(groups[len(word)], word)
+}
+```
+
+Indexing converts a slice into a lookup table. Define how duplicate keys behave; ordinary assignment
+makes the later entry replace the earlier one.
+
+```go
+index := make(map[int]User)
+for _, user := range users {
+	index[user.ID] = user
+}
+```
+
+A set is commonly represented by `map[T]struct{}`. The empty struct signals membership without a
+separate value payload.
+
+```go
+set := make(map[string]struct{})
+set["go"] = struct{}{}
+_, hasGo := set["go"]
+```
+
+### Review questions: iteration and patterns
+
+1. Why is map iteration order unsuitable for program logic?
+2. How can map keys be displayed in a stable order?
+3. Why can `counts[key]++` count a new key directly?
+4. Why does `groups[key] = append(groups[key], value)` work for a new group?
+5. What happens to duplicate keys in an index built with ordinary assignment?
+6. Why is `map[T]struct{}` a suitable set representation?
+
+### Answers to review questions: iteration and patterns
+
+1. The language does not specify the order, so it can vary between iterations and runs.
+2. Collect the keys into a slice and sort the slice before displaying it.
+3. A missing `int` map entry reads as zero, and incrementing zero produces the first count.
+4. A missing slice entry is nil, and `append` accepts a nil slice.
+5. The later assignment replaces the earlier value for that key.
+6. Keys represent members and `struct{}` is an empty value, so the map stores membership without a payload.
+
 ### Related lab
 
 See [`04-slices-maps-defer/maps-lab`](../04-slices-maps-defer/maps-lab) for runnable basic map
-examples, reliable lookup examples, and focused unit tests.
+examples, reliable lookup examples, iteration, common patterns, and focused unit tests.
 
 ```bash
 go test ./04-slices-maps-defer/maps-lab

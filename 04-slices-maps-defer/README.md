@@ -52,7 +52,7 @@ Recommended reading:
 
 ## Maps
 
-Phase 3, groups 1–2: basic operations, reliable lookups, and map state.
+Phase 3, groups 1–3: basic operations, reliable lookups, map state, iteration, and patterns.
 
 Learn to:
 
@@ -63,8 +63,10 @@ Learn to:
 - observe `len` and the zero value returned for a missing key.
 - use `value, ok := m[key]` to distinguish a missing key from a stored zero value;
 - distinguish a nil map from an empty map created with `make`.
+- avoid relying on the order produced by `range` over a map;
+- use maps for counting, grouping, indexing, and set-like membership checks.
 
-Iteration, common patterns, and concurrent access belong to later map groups.
+Concurrent access belongs to the final map group.
 
 ## Defer
 
@@ -86,6 +88,8 @@ Planned focus:
     basic.go
     basic_test.go
     maps.go
+    patterns.go
+    patterns_test.go
     state.go
     state_test.go
   slices-lab/
@@ -102,7 +106,8 @@ Planned focus:
 
 `maps-lab` contains the first focused map examples. `MapBasics` demonstrates each basic operation;
 `MapState` demonstrates comma-ok lookups and the difference between nil and empty maps. The tests
-verify their observable behavior without relying on iteration order.
+verify their observable behavior without relying on iteration order. `MapPatterns` demonstrates how
+to make output deterministic and how to use maps for counting, grouping, indexing, and sets.
 
 ### Focused Unit Tests
 
@@ -147,6 +152,9 @@ Maps:
 6. How does `value, ok := m[key]` solve this ambiguity?
 7. Which operations are safe on a nil map, and which operation panics?
 8. How does an empty map created by `make` differ from a nil map?
+9. Why must code not depend on the order of a map `range`?
+10. How can a program produce deterministic output from map keys?
+11. Which map value types fit counting, grouping, indexing, and a set?
 
 Defer:
 
