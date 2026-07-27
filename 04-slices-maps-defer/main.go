@@ -27,4 +27,5 @@ func main() {
 	sliceslab.Mistake26()
 
 	mapslab.MapBasics()
+	mapslab.MapState()
 }

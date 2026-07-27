@@ -52,7 +52,7 @@ Recommended reading:
 
 ## Maps
 
-Phase 3, group 1: basic operations.
+Phase 3, groups 1–2: basic operations, reliable lookups, and map state.
 
 Learn to:
 
@@ -61,9 +61,10 @@ Learn to:
 - insert a new key or update an existing key with `m[key] = value`;
 - delete a key with `delete`;
 - observe `len` and the zero value returned for a missing key.
+- use `value, ok := m[key]` to distinguish a missing key from a stored zero value;
+- distinguish a nil map from an empty map created with `make`.
 
-The comma-ok form, nil maps, iteration, common patterns, and concurrent access belong to later map
-groups.
+Iteration, common patterns, and concurrent access belong to later map groups.
 
 ## Defer
 
@@ -85,6 +86,8 @@ Planned focus:
     basic.go
     basic_test.go
     maps.go
+    state.go
+    state_test.go
   slices-lab/
     append_copy.go
     append_copy_test.go
@@ -98,7 +101,8 @@ Planned focus:
 `slices-lab` contains focused slice examples and tests. Keep examples small enough to explain line by line.
 
 `maps-lab` contains the first focused map examples. `MapBasics` demonstrates each basic operation;
-the tests verify its observable behavior without relying on iteration order.
+`MapState` demonstrates comma-ok lookups and the difference between nil and empty maps. The tests
+verify their observable behavior without relying on iteration order.
 
 ### Focused Unit Tests
 
@@ -139,6 +143,10 @@ Maps:
 2. Which one assignment syntax both inserts a key and updates an existing key?
 3. What does `delete` do when the key is already absent?
 4. What does `len` measure for a map?
+5. Why can ordinary lookup not distinguish an absent key from a key with value `0`?
+6. How does `value, ok := m[key]` solve this ambiguity?
+7. Which operations are safe on a nil map, and which operation panics?
+8. How does an empty map created by `make` differ from a nil map?
 
 Defer:
 

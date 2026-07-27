@@ -327,10 +327,53 @@ stored with the zero value. The comma-ok lookup that solves this belongs to the 
 4. Nothing; deleting an absent key is safe.
 5. The current number of key-value entries.
 
+### Reliable lookups and map state
+
+An ordinary lookup cannot tell a missing key apart from a key that stores the zero value. Use the
+comma-ok form when that distinction matters.
+
+```go
+stock := map[string]int{"apple": 0}
+
+quantity, present := stock["apple"] // 0, true
+missing, present := stock["pear"]   // 0, false
+```
+
+A nil map and an empty initialized map both have length zero and can be read safely. A lookup from
+either returns the value type's zero value; comma-ok returns `false` for a missing key.
+
+```go
+var nilStock map[string]int
+emptyStock := make(map[string]int)
+
+fmt.Println(len(nilStock), nilStock == nil)     // 0 true
+fmt.Println(len(emptyStock), emptyStock == nil) // 0 false
+```
+
+The important difference is writing: assigning to a nil map panics, while an empty map made with
+`make` is ready for inserts and updates. Prefer `len(m) == 0` when you only need to know whether a
+map has entries; test `m == nil` only when nilness is meaningful to the API.
+
+### Review questions: reliable lookups and state
+
+1. Why is `value := m[key]` ambiguous for maps with zero-valued entries?
+2. What do the two results of `value, ok := m[key]` mean?
+3. Which basic operations are safe on a nil map?
+4. What happens when assigning to a nil map?
+5. When should code use `len(m) == 0` instead of `m == nil`?
+
+### Answers to review questions: reliable lookups and state
+
+1. A missing key and a present key whose value is the type's zero value both produce that zero value.
+2. `value` is the stored value or the zero value; `ok` reports whether the key is present.
+3. Reading, comma-ok lookup, `len`, and `delete` are safe. Writing is not.
+4. It panics at runtime.
+5. Use `len(m) == 0` for an emptiness check; use `m == nil` only if the API gives nil a separate meaning.
+
 ### Related lab
 
 See [`04-slices-maps-defer/maps-lab`](../04-slices-maps-defer/maps-lab) for runnable basic map
-examples and focused unit tests.
+examples, reliable lookup examples, and focused unit tests.
 
 ```bash
 go test ./04-slices-maps-defer/maps-lab
