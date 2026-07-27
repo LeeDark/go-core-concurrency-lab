@@ -29,4 +29,5 @@ func main() {
 	mapslab.MapBasics()
 	mapslab.MapState()
 	mapslab.MapPatterns()
+	mapslab.MapConcurrency()
 }

@@ -52,7 +52,8 @@ Recommended reading:
 
 ## Maps
 
-Phase 3, groups 1–3: basic operations, reliable lookups, map state, iteration, and patterns.
+Phase 3, groups 1–4: basic operations, reliable lookups, map state, iteration, patterns, and safe
+concurrent access.
 
 Learn to:
 
@@ -65,8 +66,10 @@ Learn to:
 - distinguish a nil map from an empty map created with `make`.
 - avoid relying on the order produced by `range` over a map;
 - use maps for counting, grouping, indexing, and set-like membership checks.
+- protect shared maps with synchronization;
+- explain the public map contract separately from runtime internals.
 
-Concurrent access belongs to the final map group.
+Phase 3 is complete. Mutexes, channels, atomics, and `sync.Map` will be compared in depth in Phase 8.
 
 ## Defer
 
@@ -87,6 +90,8 @@ Planned focus:
   maps-lab/
     basic.go
     basic_test.go
+    concurrency.go
+    concurrency_test.go
     maps.go
     patterns.go
     patterns_test.go
@@ -108,6 +113,7 @@ Planned focus:
 `MapState` demonstrates comma-ok lookups and the difference between nil and empty maps. The tests
 verify their observable behavior without relying on iteration order. `MapPatterns` demonstrates how
 to make output deterministic and how to use maps for counting, grouping, indexing, and sets.
+`MapConcurrency` demonstrates a map protected by `sync.RWMutex`.
 
 ### Focused Unit Tests
 
@@ -126,6 +132,7 @@ Run only the focused package tests for this lab:
 ```bash
 go test ./04-slices-maps-defer/slices-lab
 go test ./04-slices-maps-defer/maps-lab
+go test -race ./04-slices-maps-defer/maps-lab
 ```
 
 Avoid broad test runs such as `go test ./...` unless explicitly requested.
@@ -155,6 +162,11 @@ Maps:
 9. Why must code not depend on the order of a map `range`?
 10. How can a program produce deterministic output from map keys?
 11. Which map value types fit counting, grouping, indexing, and a set?
+12. Why are concurrent map reads and writes unsafe without synchronization?
+13. When is a mutex-protected map a good first choice?
+14. What does the race detector check, and why is a runtime concurrent-map failure not enough?
+15. Which parts of map internals may application code rely on?
+16. What changed in the Go 1.24 map implementation?
 
 Defer:
 

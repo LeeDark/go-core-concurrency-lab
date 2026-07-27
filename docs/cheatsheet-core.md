@@ -445,10 +445,85 @@ _, hasGo := set["go"]
 5. The later assignment replaces the earlier value for that key.
 6. Keys represent members and `struct{}` is an empty value, so the map stores membership without a payload.
 
+### Concurrency boundary
+
+An ordinary map is unsafe when goroutines access it concurrently and at least one goroutine writes.
+That is a data race. It may produce a runtime error such as concurrent map read and map write, but
+the absence of that error does not prove the code is safe.
+
+For a small shared map with simple operations, a mutex-protected wrapper is usually the clearest
+first choice. Use `sync.Mutex` when every operation writes; use `sync.RWMutex` when independent
+reads are common and profiling shows that the extra complexity is worthwhile.
+
+```go
+type SafeInventory struct {
+	mu sync.RWMutex
+	m  map[string]int
+}
+
+func (s *SafeInventory) Lookup(key string) (int, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	value, ok := s.m[key]
+	return value, ok
+}
+```
+
+An alternative is channel ownership: one goroutine owns the map and other goroutines send it
+requests. This is useful when map operations are part of a larger coordination protocol. `sync.Map`
+is a specialised concurrent type for particular access patterns; do not choose it by default instead
+of an ordinary map plus a mutex.
+
+Use the race detector as a separate check:
+
+```bash
+go test -race ./04-slices-maps-defer/maps-lab
+```
+
+### Internals for interviews
+
+At the language level, `map` is a built-in associative data type. Its runtime representation is not
+part of the Go specification, so application code must not depend on buckets, addresses, growth
+thresholds, or iteration layout. Lookup, insertion, update, and deletion have expected O(1) cost;
+collisions and resizing mean this is not a per-operation worst-case guarantee.
+
+Before Go 1.24, the usual description of the runtime implementation was buckets with overflow
+buckets. Go 1.24 replaced it with an implementation based on Swiss Tables. It uses open addressing,
+logical groups of eight slots, and control metadata containing slot state and a fragment of each
+key's hash. This lets lookups discard most nonmatching slots efficiently.
+
+Go retains incremental-growth behaviour for latency-sensitive programs: a map is split into smaller
+tables so one insertion does not need to copy an arbitrarily large map. These details are useful for
+an interview answer, but the observable rules are unchanged: iteration order is unspecified and
+unsynchronised concurrent access with a writer is unsafe.
+
+Read the official [Go 1.24 release notes](https://go.dev/doc/go1.24) and the Go team's article
+[Faster Go maps with Swiss Tables](https://go.dev/blog/swisstable) for the implementation details.
+
+### Review questions: concurrency and internals
+
+1. When is a normal map unsafe to share between goroutines?
+2. Why is a runtime concurrent-map failure not a substitute for `go test -race`?
+3. When is a mutex-protected map a clear first choice?
+4. What is the channel-ownership alternative?
+5. Why should `sync.Map` not be the default concurrent map?
+6. Which map implementation details are guaranteed by the language specification?
+7. What high-level implementation change arrived in Go 1.24?
+
+### Answers to review questions: concurrency and internals
+
+1. When goroutines access it concurrently and at least one writes, unless access is synchronised.
+2. It may fail to occur; the race detector instruments execution to report races exercised by tests.
+3. For a small shared map with straightforward reads and writes.
+4. One goroutine owns the map and other goroutines request operations through channels.
+5. It is designed for particular concurrent access patterns; an ordinary map plus a mutex is often simpler.
+6. None of its runtime layout details; only the language-level map semantics are guaranteed.
+7. The runtime moved from the earlier bucket-based design to a Swiss Table-based implementation.
+
 ### Related lab
 
 See [`04-slices-maps-defer/maps-lab`](../04-slices-maps-defer/maps-lab) for runnable basic map
-examples, reliable lookup examples, iteration, common patterns, and focused unit tests.
+examples, reliable lookup examples, iteration, common patterns, safe concurrency, and focused unit tests.
 
 ```bash
 go test ./04-slices-maps-defer/maps-lab
