@@ -271,3 +271,260 @@ Run the focused package check with:
 ```bash
 go test ./04-slices-maps-defer/slices-lab
 ```
+
+## Maps
+
+### Basic operations
+
+A map associates comparable keys with values: `map[K]V`. Create one with a literal when its initial
+entries are known, or with `make` when it starts empty.
+
+```go
+prices := map[string]int{"apple": 10}
+stock := make(map[string]int)
+```
+
+Read a value with `m[key]`. When the key is absent, the expression returns the zero value of the
+map's value type. For `int`, that is `0`.
+
+```go
+fmt.Println(prices["apple"]) // 10
+fmt.Println(prices["pear"])  // 0
+```
+
+Use the same assignment syntax for insertion and update. An assignment to a new key inserts it; an
+assignment to an existing key replaces its value.
+
+```go
+stock["apple"] = 3 // insert
+stock["apple"] = 5 // update
+```
+
+`delete(m, key)` removes a key. It is safe to delete a key that is already absent. `len(m)` returns
+the number of entries currently stored in the map.
+
+```go
+delete(stock, "apple")
+fmt.Println(len(stock))
+```
+
+The zero value returned by a missing lookup cannot distinguish an absent key from a key explicitly
+stored with the zero value. The comma-ok lookup that solves this belongs to the next map group.
+
+### Review questions
+
+1. How can you create a map with initial entries and an empty writable map?
+2. What happens when `m[key]` reads an absent key?
+3. Which operation inserts a new key and updates an existing key?
+4. What happens when `delete` receives an absent key?
+5. What does `len(m)` return?
+
+### Answers to review questions
+
+1. Use a literal such as `map[string]int{"apple": 10}` for initial entries, and `make(map[string]int)` for an empty writable map.
+2. It returns the zero value of the map's value type.
+3. `m[key] = value` inserts if the key is absent and replaces the value if it exists.
+4. Nothing; deleting an absent key is safe.
+5. The current number of key-value entries.
+
+### Reliable lookups and map state
+
+An ordinary lookup cannot tell a missing key apart from a key that stores the zero value. Use the
+comma-ok form when that distinction matters.
+
+```go
+stock := map[string]int{"apple": 0}
+
+quantity, present := stock["apple"] // 0, true
+missing, present := stock["pear"]   // 0, false
+```
+
+A nil map and an empty initialized map both have length zero and can be read safely. A lookup from
+either returns the value type's zero value; comma-ok returns `false` for a missing key.
+
+```go
+var nilStock map[string]int
+emptyStock := make(map[string]int)
+
+fmt.Println(len(nilStock), nilStock == nil)     // 0 true
+fmt.Println(len(emptyStock), emptyStock == nil) // 0 false
+```
+
+The important difference is writing: assigning to a nil map panics, while an empty map made with
+`make` is ready for inserts and updates. Prefer `len(m) == 0` when you only need to know whether a
+map has entries; test `m == nil` only when nilness is meaningful to the API.
+
+### Review questions: reliable lookups and state
+
+1. Why is `value := m[key]` ambiguous for maps with zero-valued entries?
+2. What do the two results of `value, ok := m[key]` mean?
+3. Which basic operations are safe on a nil map?
+4. What happens when assigning to a nil map?
+5. When should code use `len(m) == 0` instead of `m == nil`?
+
+### Answers to review questions: reliable lookups and state
+
+1. A missing key and a present key whose value is the type's zero value both produce that zero value.
+2. `value` is the stored value or the zero value; `ok` reports whether the key is present.
+3. Reading, comma-ok lookup, `len`, and `delete` are safe. Writing is not.
+4. It panics at runtime.
+5. Use `len(m) == 0` for an emptiness check; use `m == nil` only if the API gives nil a separate meaning.
+
+### Iteration order
+
+The order produced by `range` over a map is not specified and must not be used as program logic or
+test expectation. Collect keys and sort them when output needs a stable order.
+
+```go
+keys := make([]string, 0, len(counts))
+for key := range counts {
+	keys = append(keys, key)
+}
+sort.Strings(keys)
+```
+
+Tests for an unordered result should compare membership and length, or compare a normalized sorted
+result. Do not make a test pass by assuming one observed map order is permanent.
+
+### Common patterns
+
+Counting uses the zero value of an integer, so incrementing a new key works without a preliminary
+lookup.
+
+```go
+counts := make(map[string]int)
+for _, word := range words {
+	counts[word]++
+}
+```
+
+Grouping uses a slice as the map value. `append` works on a nil slice, so the first value in a group
+needs no special case. This example groups by byte length.
+
+```go
+groups := make(map[int][]string)
+for _, word := range words {
+	groups[len(word)] = append(groups[len(word)], word)
+}
+```
+
+Indexing converts a slice into a lookup table. Define how duplicate keys behave; ordinary assignment
+makes the later entry replace the earlier one.
+
+```go
+index := make(map[int]User)
+for _, user := range users {
+	index[user.ID] = user
+}
+```
+
+A set is commonly represented by `map[T]struct{}`. The empty struct signals membership without a
+separate value payload.
+
+```go
+set := make(map[string]struct{})
+set["go"] = struct{}{}
+_, hasGo := set["go"]
+```
+
+### Review questions: iteration and patterns
+
+1. Why is map iteration order unsuitable for program logic?
+2. How can map keys be displayed in a stable order?
+3. Why can `counts[key]++` count a new key directly?
+4. Why does `groups[key] = append(groups[key], value)` work for a new group?
+5. What happens to duplicate keys in an index built with ordinary assignment?
+6. Why is `map[T]struct{}` a suitable set representation?
+
+### Answers to review questions: iteration and patterns
+
+1. The language does not specify the order, so it can vary between iterations and runs.
+2. Collect the keys into a slice and sort the slice before displaying it.
+3. A missing `int` map entry reads as zero, and incrementing zero produces the first count.
+4. A missing slice entry is nil, and `append` accepts a nil slice.
+5. The later assignment replaces the earlier value for that key.
+6. Keys represent members and `struct{}` is an empty value, so the map stores membership without a payload.
+
+### Concurrency boundary
+
+An ordinary map is unsafe when goroutines access it concurrently and at least one goroutine writes.
+That is a data race. It may produce a runtime error such as concurrent map read and map write, but
+the absence of that error does not prove the code is safe.
+
+For a small shared map with simple operations, a mutex-protected wrapper is usually the clearest
+first choice. Use `sync.Mutex` when every operation writes; use `sync.RWMutex` when independent
+reads are common and profiling shows that the extra complexity is worthwhile.
+
+```go
+type SafeInventory struct {
+	mu sync.RWMutex
+	m  map[string]int
+}
+
+func (s *SafeInventory) Lookup(key string) (int, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	value, ok := s.m[key]
+	return value, ok
+}
+```
+
+An alternative is channel ownership: one goroutine owns the map and other goroutines send it
+requests. This is useful when map operations are part of a larger coordination protocol. `sync.Map`
+is a specialised concurrent type for particular access patterns; do not choose it by default instead
+of an ordinary map plus a mutex.
+
+Use the race detector as a separate check:
+
+```bash
+go test -race ./04-slices-maps-defer/maps-lab
+```
+
+### Internals for interviews
+
+At the language level, `map` is a built-in associative data type. Its runtime representation is not
+part of the Go specification, so application code must not depend on buckets, addresses, growth
+thresholds, or iteration layout. Lookup, insertion, update, and deletion have expected O(1) cost;
+collisions and resizing mean this is not a per-operation worst-case guarantee.
+
+Before Go 1.24, the usual description of the runtime implementation was buckets with overflow
+buckets. Go 1.24 replaced it with an implementation based on Swiss Tables. It uses open addressing,
+logical groups of eight slots, and control metadata containing slot state and a fragment of each
+key's hash. This lets lookups discard most nonmatching slots efficiently.
+
+Go retains incremental-growth behaviour for latency-sensitive programs: a map is split into smaller
+tables so one insertion does not need to copy an arbitrarily large map. These details are useful for
+an interview answer, but the observable rules are unchanged: iteration order is unspecified and
+unsynchronised concurrent access with a writer is unsafe.
+
+Read the official [Go 1.24 release notes](https://go.dev/doc/go1.24) and the Go team's article
+[Faster Go maps with Swiss Tables](https://go.dev/blog/swisstable) for the implementation details.
+
+### Review questions: concurrency and internals
+
+1. When is a normal map unsafe to share between goroutines?
+2. Why is a runtime concurrent-map failure not a substitute for `go test -race`?
+3. When is a mutex-protected map a clear first choice?
+4. What is the channel-ownership alternative?
+5. Why should `sync.Map` not be the default concurrent map?
+6. Which map implementation details are guaranteed by the language specification?
+7. What high-level implementation change arrived in Go 1.24?
+
+### Answers to review questions: concurrency and internals
+
+1. When goroutines access it concurrently and at least one writes, unless access is synchronised.
+2. It may fail to occur; the race detector instruments execution to report races exercised by tests.
+3. For a small shared map with straightforward reads and writes.
+4. One goroutine owns the map and other goroutines request operations through channels.
+5. It is designed for particular concurrent access patterns; an ordinary map plus a mutex is often simpler.
+6. None of its runtime layout details; only the language-level map semantics are guaranteed.
+7. The runtime moved from the earlier bucket-based design to a Swiss Table-based implementation.
+
+### Related lab
+
+See [`04-slices-maps-defer/maps-lab`](../04-slices-maps-defer/maps-lab) for runnable basic map
+examples, reliable lookup examples, iteration, common patterns, safe concurrency, and focused unit tests.
+
+```bash
+go test ./04-slices-maps-defer/maps-lab
+```

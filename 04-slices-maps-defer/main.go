@@ -1,6 +1,9 @@
 package main
 
-import sliceslab "github/LeeDark/go-core-concurrency-lab/04-slices-maps-defer/slices-lab"
+import (
+	mapslab "github.com/LeeDark/go-core-concurrency-lab/04-slices-maps-defer/maps-lab"
+	sliceslab "github.com/LeeDark/go-core-concurrency-lab/04-slices-maps-defer/slices-lab"
+)
 
 func main() {
 	sliceslab.ArraySlice()
@@ -22,4 +25,9 @@ func main() {
 	sliceslab.Mistake24()
 	sliceslab.Mistake25()
 	sliceslab.Mistake26()
+
+	mapslab.MapBasics()
+	mapslab.MapState()
+	mapslab.MapPatterns()
+	mapslab.MapConcurrency()
 }
