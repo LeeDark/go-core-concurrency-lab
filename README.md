@@ -139,8 +139,7 @@ runtime study remains in Phase 5.
 - [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md) contains concurrency,
   goroutine, channel, worker-pool, scheduler, and interview notes.
 - [`docs/cheatsheet-concurrency.ru.md`](docs/cheatsheet-concurrency.ru.md) is the Russian translation.
-- A Ukrainian concurrency translation is not available yet; the Ukrainian core cheatsheet is
-  [`docs/cheatsheet-core.ua.md`](docs/cheatsheet-core.ua.md).
+- [`docs/cheatsheet-concurrency.ua.md`](docs/cheatsheet-concurrency.ua.md) is the Ukrainian translation.
 
 ## Running Focused Checks
 

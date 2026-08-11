@@ -2,8 +2,8 @@
 
 > Canonical source for the concurrency cheatsheets.
 > Related versions: [Russian translation](cheatsheet-concurrency.ru.md),
+> [Ukrainian translation](cheatsheet-concurrency.ua.md), and
 > [simplified summary](cheatsheet-concurrency-simplified.md).
-> Ukrainian translation: not available yet.
 
 ## Definitions
 

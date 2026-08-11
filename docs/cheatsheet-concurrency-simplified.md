@@ -2,7 +2,7 @@
 
 > Adapted summary of the [canonical concurrency cheatsheet](cheatsheet-concurrency.md).
 > Russian translation: [cheatsheet-concurrency.ru.md](cheatsheet-concurrency.ru.md).
-> Ukrainian translation: not available yet.
+> Ukrainian translation: [cheatsheet-concurrency.ua.md](cheatsheet-concurrency.ua.md).
 
 **Concurrency** is a way to structure a program as independent parts that coordinate with each other. Those parts may be interleaved on one CPU or run at the same time on several CPUs.
 
