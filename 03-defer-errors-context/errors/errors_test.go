@@ -115,6 +115,21 @@ func TestJobErrorPreservesOperationAndCause(t *testing.T) {
 	}
 }
 
+func TestOperationErrorPreservesOperationAndCause(t *testing.T) {
+	err := FailedOperation(7, "run steps", ErrInvalidInput)
+
+	operationErr, ok := OperationErrorFrom(err)
+	if !ok {
+		t.Fatal("OperationErrorFrom returned false")
+	}
+	if operationErr.OperationID != 7 || operationErr.Op != "run steps" {
+		t.Fatalf("operation error = %#v, want ID 7 and operation run steps", operationErr)
+	}
+	if !errors.Is(err, ErrInvalidInput) {
+		t.Fatal("OperationError does not preserve its cause")
+	}
+}
+
 func TestAsTypeUsesFirstDepthFirstMatchInErrorTree(t *testing.T) {
 	first := InvalidField("name", ErrInvalidInput)
 	second := InvalidField("age", ErrInvalidInput)

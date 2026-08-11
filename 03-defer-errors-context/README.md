@@ -8,7 +8,8 @@ Phase 4 Track A is in progress. The first three stages are implemented:
 2. errors — sentinel errors, typed errors, wrapping, inspection, and tests;
 3. context — cancellable workflow helpers, deadline-aware waiting, and tests.
 
-The next step is the final integrated core lab combining cleanup, error propagation, and cancellation.
+The final integrated core lab is implemented in `integration/` and combines cleanup, error
+propagation, and cancellation.
 
 ## Goal
 
@@ -36,6 +37,9 @@ visible instead of hiding them behind a large abstraction.
   context/
     context.go
     context_test.go
+  integration/
+    operation.go
+    operation_test.go
 ```
 
 Theory is maintained in the three core cheatsheets:
@@ -138,6 +142,56 @@ index. `Wait` returns when either the caller-owned signal channel is ready or co
 go test ./03-defer-errors-context/context
 ```
 
+## Stage 4: Integrated core lab
+
+The `integration` package composes the three mechanisms in one operation lifecycle:
+
+```text
+caller
+  -> context.WithCancel / context.WithTimeout
+  -> RunOperation
+       -> owned resource
+       -> defer cleanup
+       -> contextlab.Run steps
+       -> wrapped operation error
+       -> resource.Close
+```
+
+### API
+
+```go
+type Resource interface {
+	Close() error
+}
+
+func RunOperation(
+	ctx context.Context,
+	operationID int,
+	resource Resource,
+	steps ...contextlab.Step,
+) (err error)
+```
+
+The caller creates the context and resource. After accepting a non-nil resource, `RunOperation`
+closes it exactly once on every return path.
+
+The operation preserves structured causes:
+
+- step failures contain `contextlab.StepError` and `errorslab.OperationError`;
+- cancellation remains discoverable with `errors.Is`;
+- close failures are wrapped;
+- a step failure and a close failure are combined with `errors.Join`.
+
+The integration tests use a controlled fake resource rather than files, sockets, or databases. They
+cover success, step failure, cancellation before and during a step, deadline expiration, cleanup
+errors, joined errors, and invalid input.
+
+Run the focused tests with:
+
+```bash
+go test ./03-defer-errors-context/integration
+```
+
 ## Combined lifecycle model
 
 The three mechanisms answer different questions:
@@ -171,6 +225,7 @@ the returned error retains its cause through wrapping.
 go test ./03-defer-errors-context/defer
 go test ./03-defer-errors-context/errors
 go test ./03-defer-errors-context/context
+go test ./03-defer-errors-context/integration
 ```
 
 Combined targeted check:
@@ -178,13 +233,15 @@ Combined targeted check:
 ```bash
 go test ./03-defer-errors-context/defer \
 	./03-defer-errors-context/errors \
-	./03-defer-errors-context/context
+	./03-defer-errors-context/context \
+	./03-defer-errors-context/integration
 ```
 
 Use the race detector after lifecycle examples are stable:
 
 ```bash
 go test -race ./03-defer-errors-context/context
+go test -race ./03-defer-errors-context/integration
 ```
 
 Do not use `go test ./...` as the default check for this lab.
