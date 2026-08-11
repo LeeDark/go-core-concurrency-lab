@@ -106,6 +106,27 @@ Workers should stop when:
 
 Workers must not get stuck forever trying to send a result after the consumer has stopped reading.
 
+Cancellation is cooperative. The pool cannot forcibly stop a handler that is already running. A
+handler must observe the context itself; a handler that blocks forever or ignores `ctx.Done()` can
+still keep a worker alive and prevent `results` from closing.
+
+The producer is also responsible for observing cancellation while sending jobs. The pool does not
+own or close `jobs`, so it cannot force a producer to stop:
+
+```go
+for _, job := range submittedJobs {
+	select {
+	case jobs <- job:
+	case <-ctx.Done():
+		return
+	}
+}
+close(jobs)
+```
+
+If a producer ignores cancellation and remains blocked on `jobs <- job`, that producer can leak.
+This remains caller responsibility.
+
 That means sends to `results` should usually happen inside `select`:
 
 ```text
@@ -134,6 +155,9 @@ handle func(context.Context, Job) Result
 ```
 
 This lets slow or blocking handlers observe cancellation.
+
+It does not give the pool a way to forcibly interrupt the handler. The handler must check
+`ctx.Done()` or pass the context to operations that support cancellation.
 
 ### Step 3: Protect Result Sends
 
@@ -197,7 +221,13 @@ Common leak cases:
 - consumer stops reading before workers finish;
 - handler blocks and ignores context.
 
-V2 should explain which of these are handled by the design and which remain caller responsibility.
+V2 should explain which of these are handled by the design and which remain caller responsibility:
+
+- the pool handles cancellation while receiving jobs;
+- the pool handles cancellation-aware result sends;
+- the producer must stop sending and close its `jobs` channel according to its own lifecycle;
+- the consumer must cancel when it stops reading;
+- the handler must cooperate with context if it needs to stop promptly.
 
 ## Channel Ownership Rules
 
@@ -222,6 +252,13 @@ V2 should explain which of these are handled by the design and which remain call
 - workers observe cancellation;
 - workers do not close `ctx.Done()`.
 
+Producer after cancellation:
+
+- producer observes the same context while sending;
+- producer stops submitting new jobs after cancellation;
+- producer closes `jobs` if it owns the sending lifecycle;
+- pool does not close or drain caller-owned `jobs` on the producer's behalf.
+
 ## Learning Checkpoints
 
 Before moving past v2, be able to answer:
@@ -236,12 +273,18 @@ Before moving past v2, be able to answer:
 8. What can still leak if `handle` ignores context?
 9. What does `WaitGroup` still do in v2?
 10. Where should timeout be created: caller, pool, or handler?
+11. Who is responsible for stopping a producer after cancellation?
+12. What happens if the producer ignores `ctx.Done()` while sending?
 
 ## Interview Angle
 
 Useful wording:
 
 > In a worker pool, cancellation has to cover both receiving work and publishing results. Otherwise a worker can still leak even if it listens to context while reading jobs.
+
+This does not mean cancellation can forcibly stop arbitrary code. Handlers and producers must
+cooperate: handlers observe context while processing, and producers observe context while sending
+jobs.
 
 For v2, focus the explanation on lifecycle:
 
