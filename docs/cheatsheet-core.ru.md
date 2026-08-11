@@ -532,17 +532,28 @@ equal := maps.Equal(clone, map[string]int{"go": 1, "map": 2})
 
 ```go
 type SafeInventory struct {
-	mu sync.RWMutex
-	m  map[string]int
+	mu         sync.RWMutex
+	quantities map[string]int
+}
+
+func (s *SafeInventory) Set(key string, value int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.quantities == nil {
+		s.quantities = make(map[string]int)
+	}
+	s.quantities[key] = value
 }
 
 func (s *SafeInventory) Lookup(key string) (int, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	value, ok := s.m[key]
+	value, ok := s.quantities[key]
 	return value, ok
 }
 ```
+
+Нулевое значение готово к использованию: `Set` инициализирует внутреннюю map при первой записи.
 
 Альтернатива — владение через канал: одна горутина владеет картой, а остальные посылают ей
 запросы. Это подходит, когда операции с картой входят в более широкий протокол координации.

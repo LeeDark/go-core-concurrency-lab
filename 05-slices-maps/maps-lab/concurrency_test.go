@@ -6,6 +6,16 @@ import (
 	"testing"
 )
 
+func TestSafeInventoryZeroValueSupportsWrites(t *testing.T) {
+	var inventory SafeInventory
+
+	inventory.Set("apples", 10)
+
+	if quantity, ok := inventory.Lookup("apples"); quantity != 10 || !ok {
+		t.Fatalf("Lookup(apples) = (%d, %t), want (10, true)", quantity, ok)
+	}
+}
+
 func TestSafeInventoryBasicOperations(t *testing.T) {
 	inventory := NewSafeInventory()
 	inventory.Set("apples", 10)

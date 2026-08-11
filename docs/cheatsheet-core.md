@@ -533,17 +533,28 @@ reads are common and profiling shows that the extra complexity is worthwhile.
 
 ```go
 type SafeInventory struct {
-	mu sync.RWMutex
-	m  map[string]int
+	mu         sync.RWMutex
+	quantities map[string]int
+}
+
+func (s *SafeInventory) Set(key string, value int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.quantities == nil {
+		s.quantities = make(map[string]int)
+	}
+	s.quantities[key] = value
 }
 
 func (s *SafeInventory) Lookup(key string) (int, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	value, ok := s.m[key]
+	value, ok := s.quantities[key]
 	return value, ok
 }
 ```
+
+The zero value is ready for use because `Set` initializes the internal map on the first write.
 
 An alternative is channel ownership: one goroutine owns the map and other goroutines send it
 requests. This is useful when map operations are part of a larger coordination protocol. `sync.Map`
