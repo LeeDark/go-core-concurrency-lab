@@ -1,5 +1,9 @@
 # Concurrency & Parallelism
 
+> Adapted summary of the [canonical concurrency cheatsheet](cheatsheet-concurrency.md).
+> Russian translation: [cheatsheet-concurrency.ru.md](cheatsheet-concurrency.ru.md).
+> Ukrainian translation: [cheatsheet-concurrency.ua.md](cheatsheet-concurrency.ua.md).
+
 **Concurrency** is a way to structure a program as independent parts that coordinate with each other. Those parts may be interleaved on one CPU or run at the same time on several CPUs.
 
 **Parallelism** is executing multiple pieces of work at the same time. It depends on available CPUs, the Go runtime, `GOMAXPROCS`, blocking, and synchronization.
@@ -27,7 +31,9 @@ M — OS thread
 P — logical processor used by the Go runtime
 ```
 
-`GOMAXPROCS` limits how many OS threads can execute Go code simultaneously. It usually defaults to the number of available CPUs. The runtime may still create more OS threads, for example when threads are blocked in system calls.
+`GOMAXPROCS` limits how many logical processors (`P`) can execute Go code simultaneously. It usually
+defaults to the number of available CPUs. The runtime may still create more OS threads, for example
+when threads are blocked in system calls.
 
 A goroutine is usually:
 
@@ -162,8 +168,15 @@ func Run(workerCount int, jobs <-chan Job, handle func(Job) Result) <-chan Resul
 The intended consumer flow is:
 
 ```text
-create jobs -> start Run -> send jobs -> close jobs -> range over results
+create jobs -> start Run -> start producer goroutine -> send jobs -> close jobs -> range over results
 ```
+
+In v1 both channels are unbuffered. The producer and consumer must run concurrently; sending all
+jobs synchronously before reading `results` can deadlock when workers block while publishing results.
+
+The caller must close `jobs` and keep reading `results` until it closes. A non-positive worker count
+becomes one worker. `handle` must be non-nil and must not panic. Results are not guaranteed to keep
+input order.
 
 ## Backpressure and errors
 
@@ -180,8 +193,8 @@ V1 deliberately focuses on goroutines, channels, ownership, a fixed worker count
 The current tests verify that the pool processes all jobs, preserves job errors, closes `results`, and normalizes a non-positive worker count.
 
 ```bash
-go test ./06-worker-pool-v1/workerpool
-go test -race ./06-worker-pool-v1/workerpool
+go test ./07-worker-pool-v1/workerpool
+go test -race ./07-worker-pool-v1/workerpool
 ```
 
 # Race Detector / Memory Model / Scheduler

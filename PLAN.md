@@ -97,7 +97,7 @@ Focus:
 
 Primary docs:
 
-- [`06-worker-pool-v1/README.md`](06-worker-pool-v1/README.md)
+- [`07-worker-pool-v1/README.md`](07-worker-pool-v1/README.md)
 - [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md)
 
 Stop line:
@@ -148,7 +148,7 @@ Concurrency focus:
 Primary docs:
 
 - `03-errors-defer-context/README.md` (planned);
-- [`07-worker-pool-v2/README.md`](07-worker-pool-v2/README.md)
+- [`08-worker-pool-v2/README.md`](08-worker-pool-v2/README.md)
 - [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md)
 
 Stop line:
@@ -302,6 +302,6 @@ Useful targeted checks:
 go test ./05-slices-maps/slices-lab
 go test ./05-slices-maps/maps-lab
 go test -race ./05-slices-maps/maps-lab
-go test ./06-worker-pool-v1/workerpool
-go test -race ./06-worker-pool-v1/workerpool
+go test ./07-worker-pool-v1/workerpool
+go test -race ./07-worker-pool-v1/workerpool
 ```

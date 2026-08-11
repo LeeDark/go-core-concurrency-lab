@@ -36,6 +36,7 @@ Include:
 - handler function;
 - `sync.WaitGroup`;
 - one goroutine that closes `results` after all workers finish.
+- focused tests for the core lifecycle contract.
 
 Do not include:
 
@@ -46,7 +47,6 @@ Do not include:
 - goroutine leak checks;
 - race-detector work;
 - advanced error handling;
-- tests unless explicitly requested.
 
 Those topics belong to Worker Pool v2.
 
@@ -55,7 +55,7 @@ Those topics belong to Worker Pool v2.
 Use this structure:
 
 ```text
-06-worker-pool-v1/
+07-worker-pool-v1/
   README.md
   primitives/
     main.go
@@ -94,6 +94,19 @@ Why this shape:
 - pool closes `results`;
 - `jobs <-chan Job` means the pool can only receive jobs;
 - returned `<-chan Result` means the caller can only receive results.
+
+### API Contract
+
+- `workerCount <= 0` is normalized to one worker. This is a deliberate v1 policy, not an error.
+- The caller must eventually close `jobs`. A nil or never-closed `jobs` channel keeps workers waiting
+  indefinitely because v1 has no cancellation.
+- `handle` must be non-nil and must not panic. The pool does not recover handler panics.
+- Every job received by a worker is passed to `handle` once, and the handler's returned value is sent
+  as one `Result` unless the handler panics.
+- Result order is not guaranteed. Results are delivered as workers finish, not by input order or
+  `Job.ID`.
+- The caller must continue receiving from `results` until it is closed. Stopping early can block
+  workers and prevent the pool from closing `results`.
 
 ## Implementation Steps
 
@@ -169,8 +182,8 @@ It covers:
 Use only targeted commands for this lab:
 
 ```bash
-go test ./06-worker-pool-v1/workerpool
-go test -race ./06-worker-pool-v1/workerpool
+go test ./07-worker-pool-v1/workerpool
+go test -race ./07-worker-pool-v1/workerpool
 ```
 
 ## Channel Ownership
@@ -273,28 +286,6 @@ The coordinator is the one place that knows all workers have finished. It calls 
 
 If multiple goroutines send to the same channel, they must coordinate channel closure. No individual sender should close the channel unless it can prove that every sender is finished.
 
-### Interview checkpoints
-
-1. Who closes `jobs`?
-
-   The caller, because it owns sending jobs.
-
-2. Who closes `results`?
-
-   The pool coordinator, after `wg.Wait()` confirms that every worker has exited.
-
-3. Why should a worker not close `results`?
-
-   One worker cannot know whether another worker will send another result.
-
-4. What happens when a worker ranges over closed `jobs`?
-
-   It receives buffered jobs first and then exits the loop.
-
-5. What happens if the consumer stops reading `results`?
-
-   Workers can block while sending. They cannot exit, so the `WaitGroup` cannot finish and `results` cannot be closed. Worker Pool v1 documents this behavior; cancellation belongs to v2.
-
 ## Small Demo Flow
 
 The first demo should be this simple:
@@ -302,11 +293,47 @@ The first demo should be this simple:
 ```text
 create jobs channel
 start pool
-send jobs
-close jobs
-range over results
+start a producer goroutine
+send jobs from the producer
+close jobs from the producer
+range over results in the caller
 print results
 ```
+
+Both channels are unbuffered in v1, so the producer and consumer must make progress
+concurrently. Do not send all jobs synchronously and only then start reading `results`:
+
+```go
+jobs := make(chan Job)
+results := Run(3, jobs, handle)
+
+go func() {
+	defer close(jobs)
+	for _, job := range submittedJobs {
+		jobs <- job
+	}
+}()
+
+for result := range results {
+	consume(result)
+}
+```
+
+This unsafe shape can deadlock when the producer fills the workers and then waits for another
+job to be received while all workers are blocked sending results:
+
+```go
+for _, job := range submittedJobs {
+	jobs <- job
+}
+close(jobs)
+
+for result := range results {
+	consume(result)
+}
+```
+
+Cancellation for this situation is intentionally out of scope for v1; it belongs to v2.
 
 Do not add cancellation or timeout to this demo.
 
@@ -373,7 +400,7 @@ A WaitGroup lets the pool close results after every worker exits.
 
 Stop v1 when the basic worker pool is clear.
 
-Move to `07-worker-pool-v2` for:
+Move to `08-worker-pool-v2` for:
 
 - context cancellation;
 - timeout;

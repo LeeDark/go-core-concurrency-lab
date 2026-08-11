@@ -75,8 +75,8 @@ is Phase 4, Defer, errors, context, and Worker Pool v2. See
 
 ```text
 05-slices-maps/             Slice/map notes and focused collection examples.
-06-worker-pool-v1/          Minimal worker pool with channels and WaitGroup.
-07-worker-pool-v2/          Planned lifecycle-focused worker pool notes.
+07-worker-pool-v1/          Minimal worker pool with channels and WaitGroup.
+08-worker-pool-v2/          Planned lifecycle-focused worker pool notes.
 coding/                     Coding-practice exercises.
 docs/                       Core and concurrency cheatsheets.
 docs/ai/project-context.md  AI-assistant project context and learning boundaries.
@@ -99,7 +99,7 @@ behavior.
 Finished and closed. The minimal worker-pool implementation remains as a reference for later
 concurrency labs.
 
-[`06-worker-pool-v1`](06-worker-pool-v1/README.md) builds the first minimal worker pool:
+[`07-worker-pool-v1`](07-worker-pool-v1/README.md) builds the first minimal worker pool:
 
 ```text
 producer -> jobs channel -> N workers -> results channel -> consumer
@@ -119,7 +119,7 @@ error policy. Those belong to Worker Pool v2.
 
 ### Worker Pool v2
 
-[`07-worker-pool-v2`](07-worker-pool-v2/README.md) extends the v1 mental model with lifecycle
+[`08-worker-pool-v2`](08-worker-pool-v2/README.md) extends the v1 mental model with lifecycle
 control:
 
 - `context.Context`;
@@ -138,6 +138,8 @@ runtime study remains in Phase 5.
 - [`docs/cheatsheet-core.md`](docs/cheatsheet-core.md) contains core Go notes.
 - [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md) contains concurrency,
   goroutine, channel, worker-pool, scheduler, and interview notes.
+- [`docs/cheatsheet-concurrency.ru.md`](docs/cheatsheet-concurrency.ru.md) is the Russian translation.
+- [`docs/cheatsheet-concurrency.ua.md`](docs/cheatsheet-concurrency.ua.md) is the Ukrainian translation.
 
 ## Running Focused Checks
 
@@ -149,8 +151,8 @@ Examples:
 go test ./05-slices-maps/slices-lab
 go test ./05-slices-maps/maps-lab
 go test -race ./05-slices-maps/maps-lab
-go test ./06-worker-pool-v1/workerpool
-go test -race ./06-worker-pool-v1/workerpool
+go test ./07-worker-pool-v1/workerpool
+go test -race ./07-worker-pool-v1/workerpool
 ```
 
 Avoid broad test runs such as:

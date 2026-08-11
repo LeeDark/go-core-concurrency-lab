@@ -1,5 +1,10 @@
 # Concurrency & Parallelism
 
+> Canonical source for the concurrency cheatsheets.
+> Related versions: [Russian translation](cheatsheet-concurrency.ru.md),
+> [Ukrainian translation](cheatsheet-concurrency.ua.md), and
+> [simplified summary](cheatsheet-concurrency-simplified.md).
+
 ## Definitions
 
 **Concurrency** is the ability to structure a program as independent computational units that can make progress out of order or in a partial order without changing the intended result. The units may be interleaved through time-sharing or may run in parallel.
@@ -282,6 +287,11 @@ func Run(workerCount int, jobs <-chan Job, handle func(Job) Result) <-chan Resul
 
 The directional types document intent: the pool only receives from `jobs`, and the caller only receives from the returned results channel. The current implementation normalizes a non-positive `workerCount` to one.
 
+The v1 contract also assumes that `jobs` is eventually closed and that `handle` is non-nil and does
+not panic. A nil or never-closed `jobs` channel keeps workers waiting indefinitely because v1 has no
+cancellation, and the pool does not recover handler panics. Results are not ordered by submission or
+`Job.ID`; they arrive as workers finish.
+
 ## Lifecycle and channel ownership
 
 `jobs` ownership:
@@ -316,10 +326,30 @@ The normal flow is:
 ```text
 create jobs channel
 start the pool
-send jobs
-close jobs
-range over results
+start a producer goroutine
+send jobs from the producer
+close jobs from the producer
+range over results in the caller
 ```
+
+Because both channels are unbuffered in v1, sending and receiving must make progress
+concurrently. A caller must not synchronously send all jobs and only then read `results`:
+
+```go
+go func() {
+	defer close(jobs)
+	for _, job := range submittedJobs {
+		jobs <- job
+	}
+}()
+
+for result := range results {
+	consume(result)
+}
+```
+
+Otherwise workers can block while sending results, the producer can block while sending the next
+job, and the program can deadlock. Cancellation of this situation is intentionally deferred to v2.
 
 ## When to use
 
@@ -364,8 +394,8 @@ The tests verify:
 Use targeted commands for this lab:
 
 ```bash
-go test ./06-worker-pool-v1/workerpool
-go test -race ./06-worker-pool-v1/workerpool
+go test ./07-worker-pool-v1/workerpool
+go test -race ./07-worker-pool-v1/workerpool
 ```
 
 # Race Detector / Memory Model / Scheduler
