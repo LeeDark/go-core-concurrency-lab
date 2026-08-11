@@ -107,6 +107,166 @@ func calculate() (result int) {
 go test ./03-defer-errors-context/defer
 ```
 
+## Errors
+
+В Go ошибки возвращаются явно как значения. Хороший дизайн ошибки сохраняет понятный контекст
+операции и исходную причину, которую вызывающий код может проверить.
+
+### Возврат и оборачивание ошибок
+
+Проверяй ошибку на границе, где функция уже может принять решение:
+
+```go
+value, err := operation()
+if err != nil {
+	return err
+}
+```
+
+Используй `%w`, когда добавляешь контекст и сохраняешь исходную причину:
+
+```go
+return fmt.Errorf("load config %q: %w", name, err)
+```
+
+Используй `%v`, когда нужен только отформатированный текст. Ошибка, оформленная через `%v`, не
+будет доступна для `errors.Is` или `errors.As` как обернутая причина.
+
+### Sentinel errors и `errors.Is`
+
+Sentinel error — стабильное значение уровня пакета, представляющее распознаваемую причину:
+
+```go
+var ErrNotFound = errors.New("resource not found")
+
+func load(name string) error {
+	return fmt.Errorf("load %s: %w", name, ErrNotFound)
+}
+
+if errors.Is(err, ErrNotFound) {
+	// применить политику для отсутствующего ресурса
+}
+```
+
+`errors.Is` ищет ошибку в цепочке или дереве ошибок. Не сравнивай независимо созданные ошибки через
+`errors.New` только из-за одинакового текста. Прямое сравнение `==` допустимо для известного
+сравнимого sentinel error, когда обход цепочки не нужен.
+
+### Типизированные ошибки и `errors.AsType`
+
+Типизированная ошибка хранит структурированную информацию помимо текста:
+
+```go
+type FieldError struct {
+	Field string
+	Cause error
+}
+
+func (e *FieldError) Error() string {
+	return fmt.Sprintf("field %q: %v", e.Field, e.Cause)
+}
+
+func (e *FieldError) Unwrap() error { return e.Cause }
+```
+
+В Go 1.26 и новее для большинства случаев извлечения типизированной ошибки предпочтителен
+`errors.AsType`:
+
+```go
+fieldErr, ok := errors.AsType[*FieldError](err)
+if ok {
+	fmt.Println(fieldErr.Field)
+}
+```
+
+`AsType[E]` возвращает первую найденную ошибку типа `E` и логическое значение. Если совпадения нет,
+он возвращает нулевое значение типа `E` и `false`.
+
+Старый вариант `errors.As` записывает результат в целевую переменную:
+
+```go
+var fieldErr *FieldError
+if errors.As(err, &fieldErr) {
+	fmt.Println(fieldErr.Field)
+}
+```
+
+Здесь передается `&fieldErr`, имеющий тип `**FieldError`: `errors.As` нужен адрес переменной,
+которую он заполнит. `errors.AsType` возвращает типизированное значение напрямую.
+
+### `Unwrap` и типизированный контекст
+
+Тип ошибки должен реализовать `Unwrap`, если он добавляет контекст вокруг другой причины:
+
+```go
+type JobError struct {
+	JobID int
+	Op    string
+	Cause error
+}
+
+func (e *JobError) Error() string {
+	return fmt.Sprintf("job %d %s: %v", e.JobID, e.Op, e.Cause)
+}
+
+func (e *JobError) Unwrap() error { return e.Cause }
+```
+
+Без `Unwrap` внешний тип всё еще можно найти через `AsType`, но исходная причина будет скрыта от
+`errors.Is` и дальнейшего анализа.
+
+### Дерево ошибок и `errors.Join`
+
+`errors.Join` представляет несколько причин в одном дереве ошибок:
+
+```go
+err := errors.Join(
+	fmt.Errorf("read: %w", ErrPermission),
+	fmt.Errorf("lookup: %w", ErrNotFound),
+)
+
+errors.Is(err, ErrPermission) // true
+errors.Is(err, ErrNotFound)   // true
+```
+
+`errors.Is`, `errors.As` и `errors.AsType` обходят дерево в глубину и возвращают первый подходящий
+результат. Если нужны все типизированные ошибки, их нужно собрать явно: один вызов `AsType`
+возвращает только одно совпадение.
+
+### Границы политики обработки ошибок
+
+Разделяй следующие решения:
+
+- низкоуровневый код добавляет контекст операции и сохраняет причину;
+- вызывающий код решает, повторять, игнорировать, записывать или возвращать ошибку;
+- sentinel errors описывают стабильные категории, а не каждое возможное сообщение;
+- типизированные ошибки несут данные, нужные вызывающему коду;
+- `context.Canceled` и `context.DeadlineExceeded` описывают cancellation, а не обычную ошибку job.
+
+Не записывай одну и ту же ошибку в журнал на каждом уровне. Добавляй контекст на границе значимой
+операции, а политику обработки оставляй владельцу решения.
+
+### Вопросы для повторения
+
+1. Что сохраняет `%w`, чего не сохраняет `%v`?
+2. Когда вызывающему коду нужен `errors.Is`?
+3. Когда вызывающему коду нужен `errors.AsType`?
+4. Почему `errors.As` получает `&fieldErr`, если `fieldErr` имеет тип `*FieldError`?
+5. Почему типизированная ошибка с контекстом должна реализовать `Unwrap`?
+6. Чем цепочка ошибок отличается от дерева ошибок?
+7. Что меняет `errors.Join` при проверке через `Is` и `AsType`?
+8. Почему одинакового текста недостаточно для идентификации ошибки?
+
+### Связанная лабораторная работа
+
+См. [`03-defer-errors-context/errors`](../03-defer-errors-context/errors) с тестами для
+типизированных и sentinel errors, оборачивания, `errors.Is`, `errors.As`, `errors.AsType` и
+`errors.Join`.
+
+```bash
+go test ./03-defer-errors-context/errors
+```
+
 ## Срезы (slices)
 
 ### Определение

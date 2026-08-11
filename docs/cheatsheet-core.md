@@ -104,6 +104,164 @@ Executable examples are in:
 go test ./03-defer-errors-context/defer
 ```
 
+## Errors
+
+Go returns errors explicitly as values. A useful error design preserves both a readable operation
+context and the underlying cause that callers may inspect.
+
+### Return and wrap errors
+
+Check errors at the boundary where a function can decide what to do:
+
+```go
+value, err := operation()
+if err != nil {
+	return err
+}
+```
+
+Use `%w` when adding context while preserving the cause:
+
+```go
+return fmt.Errorf("load config %q: %w", name, err)
+```
+
+Use `%v` when you intentionally want only formatted text. An error formatted with `%v` is not
+available to `errors.Is` or `errors.As` as a wrapped cause.
+
+### Sentinel errors and `errors.Is`
+
+A sentinel error is a stable package-level value representing a recognizable cause:
+
+```go
+var ErrNotFound = errors.New("resource not found")
+
+func load(name string) error {
+	return fmt.Errorf("load %s: %w", name, ErrNotFound)
+}
+
+if errors.Is(err, ErrNotFound) {
+	// handle the not-found policy
+}
+```
+
+`errors.Is` searches the error chain or tree. Do not compare errors created independently by
+`errors.New` just because their messages are equal. Direct `==` comparison is appropriate only when
+comparing against a known comparable sentinel and when chain traversal is not needed.
+
+### Typed errors and `errors.AsType`
+
+A typed error carries structured information in addition to its message:
+
+```go
+type FieldError struct {
+	Field string
+	Cause error
+}
+
+func (e *FieldError) Error() string {
+	return fmt.Sprintf("field %q: %v", e.Field, e.Cause)
+}
+
+func (e *FieldError) Unwrap() error { return e.Cause }
+```
+
+In Go 1.26 and later, prefer `errors.AsType` for most typed-error inspection:
+
+```go
+fieldErr, ok := errors.AsType[*FieldError](err)
+if ok {
+	fmt.Println(fieldErr.Field)
+}
+```
+
+`AsType[E]` returns the first matching error of type `E` and a boolean. If there is no match, it
+returns the zero value of `E` and `false`.
+
+The older `errors.As` form writes into a target variable:
+
+```go
+var fieldErr *FieldError
+if errors.As(err, &fieldErr) {
+	fmt.Println(fieldErr.Field)
+}
+```
+
+The target is `&fieldErr`, whose type is `**FieldError`: `errors.As` needs the address of the variable
+that it will fill. `errors.AsType` returns the typed value directly.
+
+### Unwrap and typed context
+
+An error type should implement `Unwrap` when it adds context around another cause:
+
+```go
+type JobError struct {
+	JobID int
+	Op    string
+	Cause error
+}
+
+func (e *JobError) Error() string {
+	return fmt.Sprintf("job %d %s: %v", e.JobID, e.Op, e.Cause)
+}
+
+func (e *JobError) Unwrap() error { return e.Cause }
+```
+
+Without `Unwrap`, the outer type can still be found by `AsType`, but the underlying cause is hidden
+from `errors.Is` and further inspection.
+
+### Error trees and `errors.Join`
+
+`errors.Join` represents several causes in one error tree:
+
+```go
+err := errors.Join(
+	fmt.Errorf("read: %w", ErrPermission),
+	fmt.Errorf("lookup: %w", ErrNotFound),
+)
+
+errors.Is(err, ErrPermission) // true
+errors.Is(err, ErrNotFound)   // true
+```
+
+`errors.Is`, `errors.As`, and `errors.AsType` inspect the tree depth-first and return the first
+matching result. If the application needs all typed failures, collect them explicitly; one
+`AsType` call returns only one match.
+
+### Error-policy boundaries
+
+Keep these decisions separate:
+
+- low-level code adds operation context and preserves the cause;
+- the caller decides whether to retry, ignore, log, or return the error;
+- sentinel errors describe stable categories, not every possible message;
+- typed errors carry data needed by callers;
+- `context.Canceled` and `context.DeadlineExceeded` describe cancellation, not ordinary job failure.
+
+Avoid logging the same error at every layer. Add context where the error crosses a meaningful
+operation boundary, then let the owner of the policy handle it.
+
+### Review questions
+
+1. What does `%w` preserve that `%v` does not?
+2. When should a caller use `errors.Is`?
+3. When should a caller use `errors.AsType`?
+4. Why does `errors.As` receive `&fieldErr` when `fieldErr` has type `*FieldError`?
+5. Why should a typed contextual error implement `Unwrap`?
+6. What is the difference between an error chain and an error tree?
+7. What does `errors.Join` change about `Is` and `AsType` inspection?
+8. Why is equal text not enough to identify an error?
+
+### Related lab
+
+See [`03-defer-errors-context/errors`](../03-defer-errors-context/errors) for typed errors,
+sentinel errors, wrapping, `errors.Is`, `errors.As`, `errors.AsType`, and `errors.Join` tests.
+
+```bash
+go test ./03-defer-errors-context/errors
+```
+
 ## Slices
 
 ### Definition
