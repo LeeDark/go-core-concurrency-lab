@@ -95,6 +95,19 @@ Why this shape:
 - `jobs <-chan Job` means the pool can only receive jobs;
 - returned `<-chan Result` means the caller can only receive results.
 
+### API Contract
+
+- `workerCount <= 0` is normalized to one worker. This is a deliberate v1 policy, not an error.
+- The caller must eventually close `jobs`. A nil or never-closed `jobs` channel keeps workers waiting
+  indefinitely because v1 has no cancellation.
+- `handle` must be non-nil and must not panic. The pool does not recover handler panics.
+- Every job received by a worker is passed to `handle` once, and the handler's returned value is sent
+  as one `Result` unless the handler panics.
+- Result order is not guaranteed. Results are delivered as workers finish, not by input order or
+  `Job.ID`.
+- The caller must continue receiving from `results` until it is closed. Stopping early can block
+  workers and prevent the pool from closing `results`.
+
 ## Implementation Steps
 
 ### Step 1: Define Types

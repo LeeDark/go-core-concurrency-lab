@@ -162,11 +162,15 @@ func Run(workerCount int, jobs <-chan Job, handle func(Job) Result) <-chan Resul
 The intended consumer flow is:
 
 ```text
-create jobs -> start Run -> send jobs -> close jobs -> range over results
+create jobs -> start Run -> start producer goroutine -> send jobs -> close jobs -> range over results
 ```
 
 In v1 both channels are unbuffered. The producer and consumer must run concurrently; sending all
 jobs synchronously before reading `results` can deadlock when workers block while publishing results.
+
+The caller must close `jobs` and keep reading `results` until it closes. A non-positive worker count
+becomes one worker. `handle` must be non-nil and must not panic. Results are not guaranteed to keep
+input order.
 
 ## Backpressure and errors
 

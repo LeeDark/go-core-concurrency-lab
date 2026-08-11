@@ -282,6 +282,11 @@ func Run(workerCount int, jobs <-chan Job, handle func(Job) Result) <-chan Resul
 
 The directional types document intent: the pool only receives from `jobs`, and the caller only receives from the returned results channel. The current implementation normalizes a non-positive `workerCount` to one.
 
+The v1 contract also assumes that `jobs` is eventually closed and that `handle` is non-nil and does
+not panic. A nil or never-closed `jobs` channel keeps workers waiting indefinitely because v1 has no
+cancellation, and the pool does not recover handler panics. Results are not ordered by submission or
+`Job.ID`; they arrive as workers finish.
+
 ## Lifecycle and channel ownership
 
 `jobs` ownership:
