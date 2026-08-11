@@ -158,6 +158,27 @@ and an empty slice as `[]`.
 
 For an emptiness check, use `len(s) == 0` unless your API specifically distinguishes nil from empty.
 
+### Clearing and standard-library helpers
+
+The built-in `clear(s)` sets every slice element to its zero value. It keeps the slice length and
+capacity; it does not change the slice header's shape.
+
+```go
+s := []string{"go", "slice"}
+clear(s)
+fmt.Println(s, len(s), cap(s)) // [ ] 2 2
+```
+
+The standard `slices` package provides common operations such as `slices.Clone`, `slices.Delete`,
+`slices.Equal`, and `slices.Sort`. `slices.Delete` returns a shortened slice and clears its unused
+tail. Manual implementations are useful for learning ownership and allocation; use the standard
+package in application code when its contract matches the need.
+
+```go
+clone := slices.Clone(s)
+remaining := slices.Delete([]int{1, 2, 3}, 1, 2) // [1 3]
+```
+
 ### Retaining a large backing array
 
 A small subslice keeps the entire backing array reachable. Returning a 10-byte subslice of a 100 MB
@@ -243,6 +264,9 @@ unclear, give each goroutine an independent copy.
 5. Why does `copy` need a destination with a non-zero length?
 6. When does nil differ from an empty slice in practice?
 7. How can a small slice retain a large allocation?
+8. What does `clear(s)` change, and what does it preserve?
+9. What does `slices.Delete` do with the unused tail?
+10. What does passing a slice to a function copy, and what can remain shared?
 
 ### Answers to review questions
 
@@ -263,6 +287,10 @@ unclear, give each goroutine an independent copy.
 7. A slice descriptor keeps its backing array reachable. A small subslice still points into the
    original large array, so the garbage collector cannot reclaim that array until the subslice is no
    longer reachable. Copy the needed elements into a new slice to release it.
+8. It sets the elements to their zero values while preserving the slice's length and capacity.
+9. It returns a shortened slice and clears the elements in the unused tail.
+10. The slice descriptor is copied, but the backing array may remain shared. Reslicing or assigning a
+    new result changes only the local descriptor unless the caller receives the returned slice.
 
 ### Related lab
 
@@ -314,6 +342,29 @@ fmt.Println(len(stock))
 The zero value returned by a missing lookup cannot distinguish an absent key from a key explicitly
 stored with the zero value. The comma-ok lookup that solves this belongs to the next map group.
 
+### Key comparability, sharing, and addressability
+
+Map keys must be comparable. Strings, numbers, pointers, channels, arrays, and structs are possible
+keys when their types are comparable. Slices, maps, and functions cannot be map keys. Maps and
+slices themselves are not comparable except to `nil`.
+
+Map assignment copies a map value, not all of its entries. The original and the copy refer to the
+same map data, so a function can mutate a caller's map without returning it.
+
+Map elements are not addressable. If the value is a struct, copy it, update the copy, and assign it
+back:
+
+```go
+users := map[int]User{10: {ID: 10, Name: "Ana"}}
+user := users[10]
+user.Name = "Anna"
+users[10] = user
+```
+
+The second argument to `make(map[K]V, n)` is a capacity hint, not a maximum size. A nil map can be
+read and deleted from, but cannot receive an assignment. `clear(m)` removes all entries while
+leaving an initialized map ready for writes.
+
 ### Review questions
 
 1. How can you create a map with initial entries and an empty writable map?
@@ -321,6 +372,11 @@ stored with the zero value. The comma-ok lookup that solves this belongs to the 
 3. Which operation inserts a new key and updates an existing key?
 4. What happens when `delete` receives an absent key?
 5. What does `len(m)` return?
+6. Which types can be map keys, and which cannot?
+7. What does assigning one map variable to another copy?
+8. How do you update a field in a struct stored as a map value?
+9. What does the capacity argument to `make` mean for a map?
+10. What does `clear(m)` do to a map?
 
 ### Answers to review questions
 
@@ -329,6 +385,11 @@ stored with the zero value. The comma-ok lookup that solves this belongs to the 
 3. `m[key] = value` inserts if the key is absent and replaces the value if it exists.
 4. Nothing; deleting an absent key is safe.
 5. The current number of key-value entries.
+6. The key type must be comparable. Slices, maps, and functions cannot be keys.
+7. It copies the map value, so both variables refer to the same map data.
+8. Copy the struct value, change the copy, and assign it back to `m[key]`.
+9. It is a capacity hint for allocation planning, not a size limit.
+10. It removes all entries. An initialized map remains writable, while a nil map remains nil.
 
 ### Reliable lookups and map state
 
@@ -428,6 +489,18 @@ separate value payload.
 set := make(map[string]struct{})
 set["go"] = struct{}{}
 _, hasGo := set["go"]
+```
+
+### Standard-library map helpers
+
+The standard `maps` package provides generic helpers such as `maps.Clone`, `maps.Copy`, `maps.Equal`,
+and `maps.DeleteFunc`. These operations are shallow for map values: if a value is itself a slice or
+pointer, the referenced data remains shared.
+
+```go
+clone := maps.Clone(map[string]int{"go": 1})
+maps.Copy(clone, map[string]int{"map": 2})
+equal := maps.Equal(clone, map[string]int{"go": 1, "map": 2})
 ```
 
 ### Review questions: iteration and patterns

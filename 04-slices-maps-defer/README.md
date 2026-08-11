@@ -85,6 +85,8 @@ Phase 3 is complete. Mutexes, channels, atomics, and `sync.Map` will be compared
     concurrency.go
     concurrency_test.go
     maps.go
+    modern.go
+    modern_test.go
     patterns.go
     patterns_test.go
     state.go
@@ -94,6 +96,8 @@ Phase 3 is complete. Mutexes, channels, atomics, and `sync.Map` will be compared
     append_copy_test.go
     helpers.go
     memory_leak.go
+    modern.go
+    modern_test.go
     mistakes.go
     mistakes_test.go
     slices.go
@@ -101,11 +105,12 @@ Phase 3 is complete. Mutexes, channels, atomics, and `sync.Map` will be compared
 
 `slices-lab` contains focused slice examples and tests. Keep examples small enough to explain line by line.
 
-`maps-lab` contains the first focused map examples. `MapBasics` demonstrates each basic operation;
+`maps-lab` contains focused map examples. `MapBasics` demonstrates each basic operation;
 `MapState` demonstrates comma-ok lookups and the difference between nil and empty maps. The tests
 verify their observable behavior without relying on iteration order. `MapPatterns` demonstrates how
 to make output deterministic and how to use maps for counting, grouping, indexing, and sets.
-`MapConcurrency` demonstrates a map protected by `sync.RWMutex`.
+`MapConcurrency` demonstrates a map protected by `sync.RWMutex`. `modern.go` demonstrates the built-in
+`clear` and the standard `slices` and `maps` packages.
 
 ### Focused Unit Tests
 
@@ -116,6 +121,8 @@ to make output deterministic and how to use maps for counting, grouping, indexin
 - returning an appended slice without modifying the input;
 - in-place versus independent deletion;
 - clearing the unused tail after in-place deletion and filtering.
+
+`modern_test.go` covers `clear`, standard-library cloning, and standard-library deletion.
 
 ## Targeted Checks
 
@@ -140,6 +147,9 @@ Slices:
 5. How does a full slice expression help prevent aliasing?
 6. What is the difference between a nil slice and an empty slice?
 7. How can a small subslice keep a large array in memory?
+8. What does `clear` change in a slice?
+9. What does `slices.Delete` do with the unused tail?
+10. What remains shared when a slice is passed to a function?
 
 Maps:
 
@@ -159,3 +169,9 @@ Maps:
 14. What does the race detector check, and why is a runtime concurrent-map failure not enough?
 15. Which parts of map internals may application code rely on?
 16. What changed in the Go 1.24 map implementation?
+17. Which types can be map keys, and which cannot?
+18. What does assigning one map variable to another copy?
+19. How do you update a field in a struct stored as a map value?
+20. What does the capacity argument to `make` mean for a map?
+21. What does `clear` do to a map?
+22. Which common operations are provided by the standard `maps` package?
