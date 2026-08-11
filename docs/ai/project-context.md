@@ -19,10 +19,10 @@ Use `PLAN.md` as the source of truth for the roadmap and phase priorities.
 The complete study path is:
 
 1. Project structure, modules, packages, visibility.
-2. Go Core.
-3. Context and errors.
+2. Go Core Fundamentals.
+3. Errors, defer, and context.
 4. Structs, methods, receivers, interfaces.
-5. Slices, maps, defer.
+5. Slices and maps.
 6. Generics, tooling, workspaces.
 7. Worker Pool v1.
 8. Worker Pool v2.
@@ -31,6 +31,12 @@ The complete study path is:
 11. Shared state: mutex vs channel vs atomic.
 12. Race detector and Go memory model basics.
 13. Book track: *Learning Functional Programming in Go* (Sheehan, 2017), with discussion of modern generics.
+
+The Learning Sequence is ordered for technical-interview preparation: difficult and high-value
+topics may appear before less urgent but more familiar topics. The Phase Priorities describe the
+actual order of work in this repository. A topic can therefore appear early in the sequence while
+its dedicated phase remains lower priority. Project structure is intentionally studied in depth in
+Phase 7, despite being the most familiar topic and appearing first in the sequence.
 
 The current priorities group that path into phases:
 
@@ -44,7 +50,7 @@ The current priorities group that path into phases:
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |
 | 7     | Structure and Pipeline v2                       | Planned                  |
 | 8     | Generics, tooling, workspaces, and shared state | Planned                  |
-| 9     | Go Core                                         | Planned, lowest priority |
+| 9     | Go Core Fundamentals                            | Planned, lowest priority |
 
 The working style is:
 

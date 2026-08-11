@@ -9,10 +9,10 @@ move to the next lab.
 The complete study path is:
 
 1. Project structure, modules, packages, visibility.
-2. Go Core.
-3. Context and errors.
+2. Go Core Fundamentals.
+3. Errors, defer, and context.
 4. Structs, methods, receivers, interfaces.
-5. Slices, maps, defer.
+5. Slices and maps.
 6. Generics, tooling, workspaces.
 7. Worker Pool v1.
 8. Worker Pool v2.
@@ -20,18 +20,25 @@ The complete study path is:
 10. Pipeline v2.
 11. Shared state: mutex vs channel vs atomic.
 12. Race detector and Go memory model basics.
-13. Book track: *Learning Functional Programming in Go* (Sheehan, 2017), with discussion of modern generics.
+13. Book track: *Learning Functional Programming in Go* (Sheehan, 2017), with discussion of modern
+    generics.
 
 The study plan pairs core topics with concurrency labs:
 
 | Core topic                            | Concurrency topic      |
 |---------------------------------------|------------------------|
 | Step 1: project structure             | Step 7: Worker Pool v1 |
-| Step 2: Go Core                       | Step 8: Worker Pool v2 |
-| Step 3: errors, context               | Step 9: Pipeline v1    |
+| Step 2: Go Core Fundamentals          | Step 8: Worker Pool v2 |
+| Step 3: errors, defer, context        | Step 9: Pipeline v1    |
 | Step 4: structs, methods, interfaces  | Step 10: Pipeline v2   |
-| Step 5: slices, maps, defer           | Step 11: shared state  |
+| Step 5: slices, maps                  | Step 11: shared state  |
 | Step 6: generics, tooling, workspaces | Step 12: race detector |
+
+The Learning Sequence is ordered for technical-interview preparation: difficult and high-value
+topics may appear before less urgent but more familiar topics. The Phase Priorities describe the
+actual order of work in this repository. A topic can therefore appear early in the sequence while
+its dedicated phase remains lower priority. Project structure is intentionally studied in depth in
+Phase 7, despite being the most familiar topic and appearing first in the sequence.
 
 The current priorities group that path into phases:
 
@@ -45,7 +52,7 @@ The current priorities group that path into phases:
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |
 | 7     | Structure and Pipeline v2                       | Planned                  |
 | 8     | Generics, tooling, workspaces, and shared state | Planned                  |
-| 9     | Go Core                                         | Planned, lowest priority |
+| 9     | Go Core Fundamentals                            | Planned, lowest priority |
 
 ## Phase 1: Slices
 
@@ -135,10 +142,12 @@ Concurrency focus:
 - stop workers while waiting for jobs;
 - stop workers while sending results;
 - define a simple cancellation and timeout policy;
+- introduce basic data-race examples and synchronization reasoning;
 - reason about goroutine leaks.
 
 Primary docs:
 
+- `03-errors-defer-context/README.md` (planned);
 - [`07-worker-pool-v2/README.md`](07-worker-pool-v2/README.md)
 - [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md)
 
@@ -146,6 +155,7 @@ Stop line:
 
 - Keep v2 focused on lifecycle control. Do not turn it into a full service architecture with
   retries, metrics, tracing, persistent queues, or signal handling.
+- Leave the full race-detector, memory-model, and runtime treatment for Phase 5.
 
 ## Phase 5: Race Detector, Memory Model, And Runtime
 
@@ -236,7 +246,7 @@ Planned output:
 - `08-generics-tooling-workspaces-shared-state/README.md`
 - examples for mutex, channel ownership, and atomic counters.
 
-## Phase 9: Go Core
+## Phase 9: Go Core Fundamentals
 
 Planned with the lowest priority. Define the detailed scope before starting this phase.
 
@@ -244,18 +254,29 @@ Planned with the lowest priority. Define the detailed scope before starting this
 
 Step 13 is separate from the phase priorities and may be studied first.
 
-Read *Learning Functional Programming in Go* by Lex Sheehan (2017) as a dedicated book track. The book predates Go generics, so discuss its `interface{}`-based collection helpers in terms of modern type parameters.
+Read *Learning Functional Programming in Go* by Lex Sheehan (2017) as a dedicated book track. The
+book predates Go generics, so discuss its `interface{}`-based collection helpers in terms of modern
+type parameters.
 
 Short reading plan:
 
-1. **Pure functional programming in Go**: imperative versus declarative style, pure functions, recursion, memoization, closures, tests, and benchmarks.
-2. **Manipulating collections**: iteration, composition, `map`, `filter`, `reduce`, predicates, and the book's pre-generics collection abstractions.
-3. **Higher-order functions**: first-class functions, function composition, currying, generators, and the examples that use goroutines and `WaitGroup`.
-4. **SOLID design in Go**: connect functional composition with interfaces, embedding, error handling, and MapReduce.
-5. **Decoration and dependency injection**: interface composition, `io.Reader`/`io.Writer`, decorator, strategy, inversion of control, and lifecycle coordination with channels.
-6. **Functional ideas at architecture level**: state management, dependency direction, boundaries, layers, observer, and dependency injection.
+1. **Pure functional programming in Go**: imperative versus declarative style, pure functions,
+   recursion, memoization, closures, tests, and benchmarks.
+2. **Manipulating collections**: iteration, composition, `map`, `filter`, `reduce`, predicates, and
+   the book's pre-generics collection abstractions.
+3. **Higher-order functions**: first-class functions, function composition, currying, generators,
+   and the examples that use goroutines and `WaitGroup`.
+4. **SOLID design in Go**: connect functional composition with interfaces, embedding, error
+   handling, and MapReduce.
+5. **Decoration and dependency injection**: interface composition, `io.Reader`/`io.Writer`,
+   decorator, strategy, inversion of control, and lifecycle coordination with channels.
+6. **Functional ideas at architecture level**: state management, dependency direction, boundaries,
+   layers, observer, and dependency injection.
 
-After each practical block, write a short comparison: what remains idiomatic Go, what modern generics simplify, and where a direct loop or ordinary interface is clearer than a functional abstraction. Do not treat recursion, reflection, monads, or generic collection helpers as defaults; the interview goal is to explain the trade-off.
+After each practical block, write a short comparison: what remains idiomatic Go, what modern
+generics simplify, and where a direct loop or ordinary interface is clearer than a functional
+abstraction. Do not treat recursion, reflection, monads, or generic collection helpers as defaults;
+the interview goal is to explain the trade-off.
 
 ## Practice Track
 

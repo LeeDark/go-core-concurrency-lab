@@ -23,10 +23,10 @@ Go version:
 The main study path is:
 
 1. Project structure, modules, packages, visibility.
-2. Go Core.
-3. Context and errors.
+2. Go Core Fundamentals.
+3. Errors, defer, and context.
 4. Structs, methods, receivers, interfaces.
-5. Slices, maps, defer.
+5. Slices and maps.
 6. Generics, tooling, workspaces.
 7. Worker Pool v1.
 8. Worker Pool v2.
@@ -34,22 +34,29 @@ The main study path is:
 10. Pipeline v2.
 11. Shared state: mutex vs channel vs atomic.
 12. Race detector and Go memory model basics.
-13. Book track: *Learning Functional Programming in Go* (Sheehan, 2017), with discussion of modern generics.
+13. Book track: *Learning Functional Programming in Go* (Sheehan, 2017), with discussion of modern
+    generics.
 
 The private study plan pairs core topics with concurrency labs:
 
 | Core topic                            | Concurrency topic      |
 |---------------------------------------|------------------------|
 | Step 1: project structure             | Step 7: Worker Pool v1 |
-| Step 2: Go Core                       | Step 8: Worker Pool v2 |
-| Step 3: errors, context               | Step 9: Pipeline v1    |
+| Step 2: Go Core Fundamentals          | Step 8: Worker Pool v2 |
+| Step 3: errors, defer, context        | Step 9: Pipeline v1    |
 | Step 4: structs, methods, interfaces  | Step 10: Pipeline v2   |
-| Step 5: slices, maps, defer           | Step 11: shared state  |
+| Step 5: slices, maps                  | Step 11: shared state  |
 | Step 6: generics, tooling, workspaces | Step 12: race detector |
 
-The current priorities group that path into phases. Phase 1, Slices, is finished and closed.
-Phase 2, Worker Pool v1, is finished and closed. Phase 3, Maps, is finished and closed. The
-current work is Phase 4, Defer, errors, context, and Worker Pool v2. See
+The Learning Sequence is ordered for technical-interview preparation: difficult and high-value
+topics may appear before less urgent but more familiar topics. The Phase Priorities describe the
+actual order of work in this repository. A topic can therefore appear early in the sequence while
+its dedicated phase remains lower priority. Project structure is intentionally studied in depth in
+Phase 7, despite being the most familiar topic and appearing first in the sequence.
+
+The current priorities group that path into phases. Phase 1, Slices, is finished and closed. Phase
+2, Worker Pool v1, is finished and closed. Phase 3, Maps, is finished and closed. The current work
+is Phase 4, Defer, errors, context, and Worker Pool v2. See
 [`PLAN.md`](PLAN.md) for the full roadmap.
 
 | Phase | Topic                                           | Status                   |
@@ -62,7 +69,7 @@ current work is Phase 4, Defer, errors, context, and Worker Pool v2. See
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |
 | 7     | Structure and Pipeline v2                       | Planned                  |
 | 8     | Generics, tooling, workspaces, and shared state | Planned                  |
-| 9     | Go Core                                         | Planned, lowest priority |
+| 9     | Go Core Fundamentals                            | Planned, lowest priority |
 
 ## Repository Layout
 
@@ -121,11 +128,15 @@ control:
 - goroutine leak reasoning;
 - graceful stop semantics.
 
+Phase 4 also introduces basic data-race reasoning. The dedicated race-detector, memory-model, and
+runtime study remains in Phase 5.
+
 ## Notes And Cheatsheets
 
 - [`docs/cheatsheet-core.md`](docs/cheatsheet-core.md) contains core Go notes.
 - [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md) contains concurrency,
   goroutine, channel, worker-pool, scheduler, and interview notes.
+
 ## Running Focused Checks
 
 Prefer targeted commands for the lab you are working on.
