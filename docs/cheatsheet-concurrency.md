@@ -316,10 +316,30 @@ The normal flow is:
 ```text
 create jobs channel
 start the pool
-send jobs
-close jobs
-range over results
+start a producer goroutine
+send jobs from the producer
+close jobs from the producer
+range over results in the caller
 ```
+
+Because both channels are unbuffered in v1, sending and receiving must make progress
+concurrently. A caller must not synchronously send all jobs and only then read `results`:
+
+```go
+go func() {
+	defer close(jobs)
+	for _, job := range submittedJobs {
+		jobs <- job
+	}
+}()
+
+for result := range results {
+	consume(result)
+}
+```
+
+Otherwise workers can block while sending results, the producer can block while sending the next
+job, and the program can deadlock. Cancellation of this situation is intentionally deferred to v2.
 
 ## When to use
 

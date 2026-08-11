@@ -302,11 +302,47 @@ The first demo should be this simple:
 ```text
 create jobs channel
 start pool
-send jobs
-close jobs
-range over results
+start a producer goroutine
+send jobs from the producer
+close jobs from the producer
+range over results in the caller
 print results
 ```
+
+Both channels are unbuffered in v1, so the producer and consumer must make progress
+concurrently. Do not send all jobs synchronously and only then start reading `results`:
+
+```go
+jobs := make(chan Job)
+results := Run(3, jobs, handle)
+
+go func() {
+	defer close(jobs)
+	for _, job := range submittedJobs {
+		jobs <- job
+	}
+}()
+
+for result := range results {
+	consume(result)
+}
+```
+
+This unsafe shape can deadlock when the producer fills the workers and then waits for another
+job to be received while all workers are blocked sending results:
+
+```go
+for _, job := range submittedJobs {
+	jobs <- job
+}
+close(jobs)
+
+for result := range results {
+	consume(result)
+}
+```
+
+Cancellation for this situation is intentionally out of scope for v1; it belongs to v2.
 
 Do not add cancellation or timeout to this demo.
 

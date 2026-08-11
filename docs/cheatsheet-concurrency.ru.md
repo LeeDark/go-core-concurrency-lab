@@ -316,10 +316,30 @@ close(results) после возврата Wait
 ```text
 создать jobs channel
 запустить pool
-отправить jobs
-закрыть jobs
-range по results
+запустить producer goroutine
+отправлять jobs из producer
+закрыть jobs из producer
+делать range по results в вызывающем коде
 ```
+
+В v1 оба канала небуферизированные, поэтому producer и consumer должны продвигаться
+параллельно. Нельзя синхронно отправить все jobs, а затем начать читать `results`:
+
+```go
+go func() {
+	defer close(jobs)
+	for _, job := range submittedJobs {
+		jobs <- job
+	}
+}()
+
+for result := range results {
+	consume(result)
+}
+```
+
+Иначе workers могут заблокироваться при отправке results, producer — при отправке следующей job,
+и программа может попасть в deadlock. Отмена такой ситуации намеренно отложена до v2.
 
 ## Когда использовать
 

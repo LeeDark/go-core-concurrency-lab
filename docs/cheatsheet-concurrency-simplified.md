@@ -165,6 +165,9 @@ The intended consumer flow is:
 create jobs -> start Run -> send jobs -> close jobs -> range over results
 ```
 
+In v1 both channels are unbuffered. The producer and consumer must run concurrently; sending all
+jobs synchronously before reading `results` can deadlock when workers block while publishing results.
+
 ## Backpressure and errors
 
 `results` is unbuffered in v1. If the consumer stops reading it, workers block while sending, cannot finish, and `results` cannot be closed. The consumer must drain results unless a later version adds cancellation.
