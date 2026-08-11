@@ -265,6 +265,119 @@ errors.Is(err, ErrNotFound)   // true
 go test ./03-defer-errors-context/errors
 ```
 
+## Context
+
+`context.Context` передає між межами API сигнали скасування, deadline і значення, пов'язані з
+конкретним запитом. Він не може примусово перервати довільний код: функції мають самі спостерігати
+за context і співпрацювати з ним.
+
+### Створення та скасування context
+
+Зазвичай caller створює кореневий context і володіє cancel-функцією:
+
+```go
+ctx, cancel := context.WithCancel(parent)
+defer cancel()
+```
+
+`context.Background()` підходить як кореневий context. `context.TODO()` показує, що правильний
+батьківський context ще не вибрано. Дочірній context успадковує скасування батьківського:
+
+```text
+parent -> child -> grandchild
+```
+
+Скасування child не скасовує parent. Скасування parent скасовує всіх нащадків. Повторний виклик
+cancel безпечний.
+
+### Спостереження за скасуванням
+
+Скасування сигналізується закриттям `Done()`; значення в канал не надсилається:
+
+```go
+select {
+case <-ctx.Done():
+	return ctx.Err()
+case value := <-input:
+	return process(value)
+}
+```
+
+Після скасування `ctx.Err()` повертає `context.Canceled` або `context.DeadlineExceeded`. Перевіряй
+їх через `errors.Is`, якщо помилка може мати додатковий контекст.
+
+### Deadline і timeout
+
+```go
+ctx, cancel := context.WithTimeout(parent, 2*time.Second)
+defer cancel()
+```
+
+`WithDeadline` використовує абсолютний час, а `WithTimeout` задає строк відносно поточного моменту.
+Дочірній context не може продовжити раніший deadline батьківського context.
+
+Зазвичай timeout операції обирає caller. Функція може створити коротший дочірній timeout для
+внутрішнього обмеження, але має приймати context caller'а і зберігати його семантику скасування.
+
+### Context-aware API
+
+Став context першим аргументом і передавай його операціям, що підтримують скасування:
+
+```go
+func Run(ctx context.Context, input Input) (Output, error) {
+	if err := ctx.Err(); err != nil {
+		return Output{}, err
+	}
+	return doWork(ctx, input)
+}
+```
+
+Не зберігай context у довгоживучій структурі й не передавай nil context. Якщо API потребує context,
+використовуй явний аргумент, а не непомітно підставляй `Background`.
+
+### Значення в context
+
+`context.WithValue` призначений для metadata, пов'язаних із запитом і передаваних через межі API:
+
+```go
+type requestIDKey struct{}
+
+ctx = context.WithValue(ctx, requestIDKey{}, "req-42")
+```
+
+Використовуй неекспортований тип ключа. Не передавай через context обов'язкові аргументи функції,
+необов'язкову конфігурацію або змінюваний стан застосунку.
+
+### Поширені помилки lifecycle
+
+- створити дочірній context і забути його cancel-функцію;
+- перевірити скасування лише перед довгою блокувальною операцією;
+- вважати, що context може зупинити handler, який ігнорує `Done()`;
+- скасувати child і очікувати зупинки parent;
+- використовувати `time.Sleep` замість очікування `ctx.Done()`;
+- дозволити producer або consumer ігнорувати той самий context, яким керується операція.
+
+### Питання для повторення
+
+1. Хто зазвичай створює та скасовує context?
+2. Що відбувається з `Done()` після скасування?
+3. Чим відрізняються `context.Canceled` і `context.DeadlineExceeded`?
+4. Чи скасовує child свій parent?
+5. Чи скасовує parent своїх нащадків?
+6. Чому context зазвичай є першим аргументом функції?
+7. Навіщо для дочірнього context зазвичай потрібен `defer cancel()`?
+8. Що можна зберігати в context values, а що не можна?
+9. Чи може context примусово зупинити handler, який його ігнорує?
+
+### Пов'язана лабораторна робота
+
+Див. [`03-defer-errors-context/context`](../03-defer-errors-context/context) із скасованими кроками,
+очікуванням з урахуванням deadline, поширенням скасування parent-child і цільовими тестами.
+
+```bash
+go test ./03-defer-errors-context/context
+```
+
 ## Зрізи (slices)
 
 ### Визначення

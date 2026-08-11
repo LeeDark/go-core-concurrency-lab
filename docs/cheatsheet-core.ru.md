@@ -267,6 +267,119 @@ errors.Is(err, ErrNotFound)   // true
 go test ./03-defer-errors-context/errors
 ```
 
+## Context
+
+`context.Context` передаёт между границами API сигналы отмены, deadline и значения, связанные с
+конкретным запросом. Он не может принудительно прервать произвольный код: функции должны сами
+наблюдать context и сотрудничать с ним.
+
+### Создание и отмена context
+
+Обычно caller создает корневой context и владеет cancel-функцией:
+
+```go
+ctx, cancel := context.WithCancel(parent)
+defer cancel()
+```
+
+`context.Background()` подходит как корневой context. `context.TODO()` показывает, что правильный
+родитель еще не выбран. Дочерний context наследует отмену родителя:
+
+```text
+parent -> child -> grandchild
+```
+
+Отмена child не отменяет parent. Отмена parent отменяет всех потомков. Повторно вызвать cancel
+безопасно.
+
+### Наблюдение за отменой
+
+Отмена сигнализируется закрытием `Done()`; значение в канал не отправляется:
+
+```go
+select {
+case <-ctx.Done():
+	return ctx.Err()
+case value := <-input:
+	return process(value)
+}
+```
+
+После отмены `ctx.Err()` возвращает `context.Canceled` или `context.DeadlineExceeded`. Проверяй их
+через `errors.Is`, если ошибка может иметь дополнительный контекст.
+
+### Deadline и timeout
+
+```go
+ctx, cancel := context.WithTimeout(parent, 2*time.Second)
+defer cancel()
+```
+
+`WithDeadline` использует абсолютное время, а `WithTimeout` задает срок относительно текущего
+момента. Дочерний context не может продлить более ранний deadline родителя.
+
+Обычно timeout операции выбирает caller. Функция может создать более короткий дочерний timeout для
+внутреннего ограничения, но должна принимать context caller'а и сохранять его семантику отмены.
+
+### Context-aware API
+
+Ставь context первым аргументом и передавай его операциям, поддерживающим отмену:
+
+```go
+func Run(ctx context.Context, input Input) (Output, error) {
+	if err := ctx.Err(); err != nil {
+		return Output{}, err
+	}
+	return doWork(ctx, input)
+}
+```
+
+Не храни context в долгоживущей структуре и не передавай nil context. Если API требует context,
+используй явный аргумент, а не молча подставляй `Background`.
+
+### Значения в context
+
+`context.WithValue` предназначен для metadata, связанной с запросом и проходящей через границы API:
+
+```go
+type requestIDKey struct{}
+
+ctx = context.WithValue(ctx, requestIDKey{}, "req-42")
+```
+
+Используй неэкспортируемый тип ключа. Не передавай через context обязательные аргументы функции,
+необязательную конфигурацию или изменяемое состояние приложения.
+
+### Частые ошибки lifecycle
+
+- создать дочерний context и забыть его cancel-функцию;
+- проверить отмену только перед долгой блокирующей операцией;
+- считать, что context может убить handler, игнорирующий `Done()`;
+- отменить child и ожидать остановки parent;
+- использовать `time.Sleep` вместо ожидания `ctx.Done()`;
+- позволить producer или consumer игнорировать тот же context, которым управляется операция.
+
+### Вопросы для повторения
+
+1. Кто обычно создает и отменяет context?
+2. Что происходит с `Done()` после отмены?
+3. Чем отличаются `context.Canceled` и `context.DeadlineExceeded`?
+4. Отменяет ли child своего parent?
+5. Отменяет ли parent своих потомков?
+6. Почему context обычно является первым аргументом функции?
+7. Почему для дочернего context обычно нужен `defer cancel()`?
+8. Что можно хранить в context values, а что нельзя?
+9. Может ли context принудительно остановить handler, который его игнорирует?
+
+### Связанная лабораторная работа
+
+См. [`03-defer-errors-context/context`](../03-defer-errors-context/context) с отменяемыми шагами,
+ожиданием с учетом deadline, распространением отмены parent-child и целевыми тестами.
+
+```bash
+go test ./03-defer-errors-context/context
+```
+
 ## Срезы (slices)
 
 ### Определение

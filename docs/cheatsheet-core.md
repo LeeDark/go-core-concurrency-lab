@@ -262,6 +262,119 @@ sentinel errors, wrapping, `errors.Is`, `errors.As`, `errors.AsType`, and `error
 go test ./03-defer-errors-context/errors
 ```
 
+## Context
+
+`context.Context` propagates cancellation, deadlines, and request-scoped values across API
+boundaries. It does not forcibly interrupt arbitrary code: functions must observe the context and
+cooperate.
+
+### Creating and canceling contexts
+
+The caller usually creates the root context and owns the cancel function:
+
+```go
+ctx, cancel := context.WithCancel(parent)
+defer cancel()
+```
+
+`context.Background()` is a suitable root context. `context.TODO()` marks code where the correct
+parent has not been decided yet. A child context inherits cancellation from its parent:
+
+```text
+parent -> child -> grandchild
+```
+
+Canceling a child does not cancel its parent. Canceling a parent cancels all descendants. Calling a
+cancel function more than once is safe.
+
+### Observing cancellation
+
+Cancellation is signaled by closing `Done()`; no value is sent through the channel:
+
+```go
+select {
+case <-ctx.Done():
+	return ctx.Err()
+case value := <-input:
+	return process(value)
+}
+```
+
+After cancellation, `ctx.Err()` returns either `context.Canceled` or
+`context.DeadlineExceeded`. Check these with `errors.Is` when the error may have additional context.
+
+### Deadlines and timeouts
+
+```go
+ctx, cancel := context.WithTimeout(parent, 2*time.Second)
+defer cancel()
+```
+
+`WithDeadline` uses an absolute time; `WithTimeout` derives a deadline relative to now. A child
+cannot extend its parent's earlier deadline.
+
+The caller normally chooses the operation timeout. A function may create a shorter child timeout for
+an internal bound, but it should accept the caller's context and preserve its cancellation semantics.
+
+### Context-aware APIs
+
+Put context first in a function signature and pass it to operations that support cancellation:
+
+```go
+func Run(ctx context.Context, input Input) (Output, error) {
+	if err := ctx.Err(); err != nil {
+		return Output{}, err
+	}
+	return doWork(ctx, input)
+}
+```
+
+Do not store context in a long-lived struct, and do not pass a nil context. If an API requires a
+context, use an explicit context parameter rather than silently substituting `Background`.
+
+### Context values
+
+`context.WithValue` is for request-scoped metadata that crosses API boundaries:
+
+```go
+type requestIDKey struct{}
+
+ctx = context.WithValue(ctx, requestIDKey{}, "req-42")
+```
+
+Use an unexported key type. Do not use context values for mandatory function arguments, optional
+configuration, or mutable application state.
+
+### Common lifecycle mistakes
+
+- creating a child context and forgetting its `cancel` function;
+- checking cancellation only before a long blocking operation;
+- assuming context can kill a handler that ignores `Done()`;
+- canceling a child and expecting its parent to stop;
+- using `time.Sleep` instead of waiting on `ctx.Done()`;
+- letting a producer or consumer ignore the same context used by the operation.
+
+### Review questions
+
+1. Who normally creates and cancels a context?
+2. What happens to `Done()` after cancellation?
+3. What is the difference between `context.Canceled` and `context.DeadlineExceeded`?
+4. Does canceling a child cancel its parent?
+5. Does canceling a parent cancel its descendants?
+6. Why should context usually be the first function argument?
+7. Why should a function usually call `defer cancel()` for its child context?
+8. What belongs in context values, and what does not?
+9. Can context forcibly stop a handler that ignores it?
+
+### Related lab
+
+See [`03-defer-errors-context/context`](../03-defer-errors-context/context) for cancellable steps,
+deadline-aware waiting, parent-child propagation, and focused tests.
+
+```bash
+go test ./03-defer-errors-context/context
+```
+
 ## Slices
 
 ### Definition
