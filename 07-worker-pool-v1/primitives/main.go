@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
-	"time"
 )
 
 func main() {
@@ -13,8 +12,6 @@ func main() {
 	channels()
 
 	fmt.Println("Hello from main goroutine")
-
-	time.Sleep(time.Second)
 
 	fmt.Println("main returns")
 }
@@ -43,7 +40,7 @@ func goroutines() {
 		fmt.Println("Hello from goroutine with anonymous func")
 	}()
 
-	// Creating new goroutines is faster and cheaper than creating operation system threads.
+	// Creating new goroutines is faster and cheaper than creating operating system threads.
 
 	// The parameters of the goroutine function are evaluated before the goroutine starts
 	// and passed to the function once the goroutine starts running.
@@ -52,18 +49,18 @@ func goroutines() {
 	}(1, 2)
 
 	// The Go scheduler assigns operating system threads to run goroutines.
-
-	// The number of operating system threads used by the Go runtime is equal to the number
-	// of processors/cores on the platform (unless you change this by setting the GOMAXPROCS environment variable
-	// or by calling the runtime.GOMAXPROCS function).
+	// GOMAXPROCS limits the number of logical processors (P) that can execute Go code
+	// simultaneously. It does not set the total number of operating system threads.
 	go1 := runtime.NumGoroutine()
-	fmt.Printf("The number of goroutines that currently exist: %d\n", go1)
+	fmt.Printf("The approximate number of goroutines that currently exist: %d\n", go1)
 
-	proc1 := runtime.GOMAXPROCS(4)
-	fmt.Printf("The number of processors/cores after updating: %d\n", proc1)
+	previous := runtime.GOMAXPROCS(4)
+	defer runtime.GOMAXPROCS(previous)
+	current := runtime.GOMAXPROCS(0)
+	fmt.Printf("GOMAXPROCS after updating: %d (previously %d)\n", current, previous)
 
 	go2 := runtime.NumGoroutine()
-	fmt.Printf("The number of goroutines that currently exist: %d\n", go2)
+	fmt.Printf("The approximate number of goroutines that currently exist: %d\n", go2)
 
 	// Every run of this code is likely to print out a, b, and c in random order.
 	h := func(s string) {
@@ -73,24 +70,15 @@ func goroutines() {
 		go h(s1)
 	}
 
-	// Before Go v1.22: data race
+	// Passing the loop value as an argument is explicit and safe on all supported Go versions.
 	for _, s2 := range []string{"x", "y", "z"} {
-		s2 := s2 // fixed for Go v1.21 and earlier
-
-		go func() {
-			fmt.Printf("Goroutine %s\n", s2)
-		}()
+		go func(s string) {
+			fmt.Printf("Goroutine %s\n", s)
+		}(s2)
 	}
 
-	// After Go v1.22: data race
-	var s3 string // here s3 in func goroutines scope
-	for _, s3 = range []string{"k", "l", "m"} {
-		s3 := s3 // fixed as for Go v1.21 and earlier, here s3 in for loop scope
-
-		go func() {
-			fmt.Printf("Goroutine %s\n", s3)
-		}()
-	}
+	// In Go 1.22 and later, variables declared by a range loop are per-iteration.
+	// Passing values explicitly is still clearer and also works with older Go versions.
 
 	// Data race solution
 	var wg sync.WaitGroup
@@ -125,7 +113,8 @@ func channels() {
 
 	ch <- 3
 	fmt.Printf("len: %d\n", len(ch))
-	// Don't do this in real code with many goroutines writers/readers!
+	// len(ch) is only a snapshot; it is not synchronization and should not be used
+	// to decide whether another goroutine can safely receive.
 	if len(ch) > 0 {
 		y := <-ch
 		fmt.Printf("%d\n", y)
@@ -192,6 +181,7 @@ func channels() {
 
 	// this is equivalent to yy=xx, with additional synchronization guarantees
 	// it does not transfer the ownership of the value
+	unbufferedDone := make(chan struct{})
 
 	// sender
 	go func() {
@@ -203,7 +193,9 @@ func channels() {
 	go func() {
 		yy := <-chUnbuffered
 		fmt.Println(yy)
+		close(unbufferedDone)
 	}()
+	<-unbufferedDone
 
 	// TODO: Directional channels
 	// TODO: Worker pool sample
