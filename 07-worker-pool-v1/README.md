@@ -55,7 +55,7 @@ Those topics belong to Worker Pool v2.
 Use this structure:
 
 ```text
-06-worker-pool-v1/
+07-worker-pool-v1/
   README.md
   primitives/
     main.go
@@ -169,8 +169,8 @@ It covers:
 Use only targeted commands for this lab:
 
 ```bash
-go test ./06-worker-pool-v1/workerpool
-go test -race ./06-worker-pool-v1/workerpool
+go test ./07-worker-pool-v1/workerpool
+go test -race ./07-worker-pool-v1/workerpool
 ```
 
 ## Channel Ownership
@@ -373,7 +373,7 @@ A WaitGroup lets the pool close results after every worker exits.
 
 Stop v1 when the basic worker pool is clear.
 
-Move to `07-worker-pool-v2` for:
+Move to `08-worker-pool-v2` for:
 
 - context cancellation;
 - timeout;

@@ -57,7 +57,7 @@ Those belong to later labs.
 ## Suggested Structure
 
 ```text
-07-worker-pool-v2/
+08-worker-pool-v2/
   README.md
   workerpool/
     pool.go

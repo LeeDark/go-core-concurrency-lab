@@ -364,8 +364,8 @@ The tests verify:
 Use targeted commands for this lab:
 
 ```bash
-go test ./06-worker-pool-v1/workerpool
-go test -race ./06-worker-pool-v1/workerpool
+go test ./07-worker-pool-v1/workerpool
+go test -race ./07-worker-pool-v1/workerpool
 ```
 
 # Race Detector / Memory Model / Scheduler

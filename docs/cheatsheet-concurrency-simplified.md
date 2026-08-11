@@ -180,8 +180,8 @@ V1 deliberately focuses on goroutines, channels, ownership, a fixed worker count
 The current tests verify that the pool processes all jobs, preserves job errors, closes `results`, and normalizes a non-positive worker count.
 
 ```bash
-go test ./06-worker-pool-v1/workerpool
-go test -race ./06-worker-pool-v1/workerpool
+go test ./07-worker-pool-v1/workerpool
+go test -race ./07-worker-pool-v1/workerpool
 ```
 
 # Race Detector / Memory Model / Scheduler

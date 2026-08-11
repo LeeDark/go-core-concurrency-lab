@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/LeeDark/go-core-concurrency-lab/06-worker-pool-v1/workerpool"
+	"github.com/LeeDark/go-core-concurrency-lab/07-worker-pool-v1/workerpool"
 )
 
 func main() {
