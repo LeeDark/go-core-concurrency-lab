@@ -1,11 +1,11 @@
-package sliceslab
+package slicesadvanced
 
 import "testing"
 
 var mistake21ConvertResult []float32
 
-func BenchmarkMistake21Convert_EmptySlice(b *testing.B) {
-	foos := []int{}
+func BenchmarkMistake21Convert_WithoutPreallocation(b *testing.B) {
+	foos := make([]int, 1_000)
 	b.ReportAllocs()
 	b.ResetTimer()
 
@@ -15,7 +15,7 @@ func BenchmarkMistake21Convert_EmptySlice(b *testing.B) {
 }
 
 func BenchmarkMistake21Convert_GivenCapacity(b *testing.B) {
-	foos := []int{}
+	foos := make([]int, 1_000)
 	b.ReportAllocs()
 	b.ResetTimer()
 
@@ -25,7 +25,7 @@ func BenchmarkMistake21Convert_GivenCapacity(b *testing.B) {
 }
 
 func BenchmarkMistake21Convert_GivenLength(b *testing.B) {
-	foos := []int{}
+	foos := make([]int, 1_000)
 	b.ReportAllocs()
 	b.ResetTimer()
 

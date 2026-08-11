@@ -13,8 +13,7 @@ contains:
 - a length, returned by `len`;
 - a capacity, returned by `cap`.
 
-A slice does not store its elements itself. Copying a slice value copies only this descriptor, so
-two
+A slice does not store its elements itself. Copying a slice value copies only this descriptor, so two
 slices can refer to the same backing array.
 
 ```go
@@ -54,8 +53,7 @@ s := []int{1, 2}
 s = append(s, 3)
 ```
 
-If the slice has spare capacity, `append` may reuse its backing array. Other slices sharing that
-array
+If the slice has spare capacity, `append` may reuse its backing array. Other slices sharing that array
 can then observe the written elements.
 
 ```go
@@ -94,8 +92,9 @@ b = append(b, 99)
 fmt.Println(a) // [1 2 99 4]
 ```
 
-Use a full slice expression to limit the capacity exposed to a subslice. It forces a later `append`
-to allocate, but it does not copy the existing elements.
+Use a full slice expression to limit the capacity exposed to a subslice. When the third index equals
+the high index, the resulting capacity equals its length, so an `append` that adds an element must
+allocate. The expression does not copy the existing elements.
 
 ```go
 a := []int{1, 2, 3, 4}
@@ -126,13 +125,13 @@ To make an independent clone while preserving the distinction between `nil` and 
 
 ```go
 func Clone[T any](s []T) []T {
-if s == nil {
-return nil
-}
+	if s == nil {
+		return nil
+	}
 
-out := make([]T, len(s))
-copy(out, s)
-return out
+	out := make([]T, len(s))
+	copy(out, s)
+	return out
 }
 ```
 
@@ -157,6 +156,27 @@ and an empty slice as `[]`.
 
 For an emptiness check, use `len(s) == 0` unless your API specifically distinguishes nil from empty.
 
+### Clearing and standard-library helpers
+
+The built-in `clear(s)` sets every slice element to its zero value. It keeps the slice length and
+capacity; it does not change the slice header's shape.
+
+```go
+s := []string{"go", "slice"}
+clear(s)
+fmt.Println(s, len(s), cap(s)) // [ ] 2 2
+```
+
+The standard `slices` package provides common operations such as `slices.Clone`, `slices.Delete`,
+`slices.Equal`, and `slices.Sort`. `slices.Delete` returns a shortened slice and clears its unused
+tail. Manual implementations are useful for learning ownership and allocation; use the standard
+package in application code when its contract matches the need.
+
+```go
+clone := slices.Clone(s)
+remaining := slices.Delete([]int{1, 2, 3}, 1, 2) // [1 3]
+```
+
 ### Retaining a large backing array
 
 A small subslice keeps the entire backing array reachable. Returning a 10-byte subslice of a 100 MB
@@ -164,8 +184,8 @@ buffer can therefore retain roughly 100 MB of memory.
 
 ```go
 func firstTenBad() []byte {
-big := make([]byte, 100<<20)
-return big[:10]
+	big := make([]byte, 100<<20)
+	return big[:10]
 }
 ```
 
@@ -173,33 +193,32 @@ Copy the small part before returning it when the large buffer is no longer neede
 
 ```go
 func firstTenGood() []byte {
-big := make([]byte, 100<<20)
-small := make([]byte, 10)
-copy(small, big[:10])
-return small
+	big := make([]byte, 100<<20)
+	small := make([]byte, 10)
+	copy(small, big[:10])
+	return small
 }
 ```
 
 ### Common operations and ownership
 
-In-place operations reuse the backing array and may modify the input slice's elements. A function
-that
+In-place operations reuse the backing array and may modify the input slice's elements. A function that
 returns a new slice allocates separate storage and leaves the input unchanged.
 
 ```go
 // In place: the input's backing array is modified.
 func DeleteAt[T any](s []T, i int) []T {
-copy(s[i:], s[i+1:])
-var zero T
-s[len(s)-1] = zero // release a reference held in the unused tail, if any
-return s[:len(s)-1]
+	copy(s[i:], s[i+1:])
+	var zero T
+	s[len(s)-1] = zero // release a reference held in the unused tail, if any
+	return s[:len(s)-1]
 }
 
 // New slice: the input is unchanged.
 func DeleteAtNew[T any](s []T, i int) []T {
-out := make([]T, 0, len(s)-1)
-out = append(out, s[:i]...)
-return append(out, s[i+1:]...)
+	out := make([]T, 0, len(s)-1)
+	out = append(out, s[:i]...)
+	return append(out, s[i+1:]...)
 }
 ```
 
@@ -208,17 +227,16 @@ the caller's slice.
 
 ### `range` over slices
 
-The value produced by `range` is a copy of the element. Change elements through their index when
-needed.
+The value produced by `range` is a copy of the element. Change elements through their index when needed.
 
 ```go
 s := []int{1, 2, 3}
 for _, v := range s {
-v *= 10 // changes only the copy
+	v *= 10 // changes only the copy
 }
 
 for i := range s {
-s[i] *= 10 // changes the slice element
+	s[i] *= 10 // changes the slice element
 }
 ```
 
@@ -228,8 +246,10 @@ intended.
 
 ### Concurrency
 
-Slices are not safe for concurrent mutation. If goroutines share a slice and at least one writes to
-it, coordinate access with synchronization or give each goroutine an independent copy.
+Concurrent reads of a slice are safe when no goroutine changes the relevant backing-array elements or
+shared slice state. Concurrent access to the same element or overlapping elements, and operations
+such as `append` that may write to shared backing storage, require synchronization. If ownership is
+unclear, give each goroutine an independent copy.
 
 ### Review questions
 
@@ -240,6 +260,9 @@ it, coordinate access with synchronization or give each goroutine an independent
 5. Why does `copy` need a destination with a non-zero length?
 6. When does nil differ from an empty slice in practice?
 7. How can a small slice retain a large allocation?
+8. What does `clear(s)` change, and what does it preserve?
+9. What does `slices.Delete` do with the unused tail?
+10. What does passing a slice to a function copy, and what can remain shared?
 
 ### Answers to review questions
 
@@ -260,16 +283,20 @@ it, coordinate access with synchronization or give each goroutine an independent
 7. A slice descriptor keeps its backing array reachable. A small subslice still points into the
    original large array, so the garbage collector cannot reclaim that array until the subslice is no
    longer reachable. Copy the needed elements into a new slice to release it.
+8. It sets the elements to their zero values while preserving the slice's length and capacity.
+9. It returns a shortened slice and clears the elements in the unused tail.
+10. The slice descriptor is copied, but the backing array may remain shared. Reslicing or assigning a
+    new result changes only the local descriptor unless the caller receives the returned slice.
 
 ### Related lab
 
-See [`04-slices-maps-defer/slices-lab`](../04-slices-maps-defer/slices-lab) for runnable examples.
+See [`05-slices-maps/slices-lab`](../05-slices-maps/slices-lab) for runnable examples.
 Its seven focused unit tests cover clone semantics, input ownership during append and deletion, and
 zeroing the unused tail after in-place operations.
 Run the focused package check with:
 
 ```bash
-go test ./04-slices-maps-defer/slices-lab
+go test ./05-slices-maps/slices-lab
 ```
 
 ## Maps
@@ -311,6 +338,29 @@ fmt.Println(len(stock))
 The zero value returned by a missing lookup cannot distinguish an absent key from a key explicitly
 stored with the zero value. The comma-ok lookup that solves this belongs to the next map group.
 
+### Key comparability, sharing, and addressability
+
+Map keys must be comparable. Strings, numbers, pointers, channels, arrays, and structs are possible
+keys when their types are comparable. Slices, maps, and functions cannot be map keys. Maps and
+slices themselves are not comparable except to `nil`.
+
+Map assignment copies a map value, not all of its entries. The original and the copy refer to the
+same map data, so a function can mutate a caller's map without returning it.
+
+Map elements are not addressable. If the value is a struct, copy it, update the copy, and assign it
+back:
+
+```go
+users := map[int]User{10: {ID: 10, Name: "Ana"}}
+user := users[10]
+user.Name = "Anna"
+users[10] = user
+```
+
+The second argument to `make(map[K]V, n)` is a capacity hint, not a maximum size. A nil map can be
+read and deleted from, but cannot receive an assignment. `clear(m)` removes all entries while
+leaving an initialized map ready for writes.
+
 ### Review questions
 
 1. How can you create a map with initial entries and an empty writable map?
@@ -318,6 +368,11 @@ stored with the zero value. The comma-ok lookup that solves this belongs to the 
 3. Which operation inserts a new key and updates an existing key?
 4. What happens when `delete` receives an absent key?
 5. What does `len(m)` return?
+6. Which types can be map keys, and which cannot?
+7. What does assigning one map variable to another copy?
+8. How do you update a field in a struct stored as a map value?
+9. What does the capacity argument to `make` mean for a map?
+10. What does `clear(m)` do to a map?
 
 ### Answers to review questions
 
@@ -326,6 +381,11 @@ stored with the zero value. The comma-ok lookup that solves this belongs to the 
 3. `m[key] = value` inserts if the key is absent and replaces the value if it exists.
 4. Nothing; deleting an absent key is safe.
 5. The current number of key-value entries.
+6. The key type must be comparable. Slices, maps, and functions cannot be keys.
+7. It copies the map value, so both variables refer to the same map data.
+8. Copy the struct value, change the copy, and assign it back to `m[key]`.
+9. It is a capacity hint for allocation planning, not a size limit.
+10. It removes all entries. An initialized map remains writable, while a nil map remains nil.
 
 ### Reliable lookups and map state
 
@@ -427,6 +487,18 @@ set["go"] = struct{}{}
 _, hasGo := set["go"]
 ```
 
+### Standard-library map helpers
+
+The standard `maps` package provides generic helpers such as `maps.Clone`, `maps.Copy`, `maps.Equal`,
+and `maps.DeleteFunc`. These operations are shallow for map values: if a value is itself a slice or
+pointer, the referenced data remains shared.
+
+```go
+clone := maps.Clone(map[string]int{"go": 1})
+maps.Copy(clone, map[string]int{"map": 2})
+equal := maps.Equal(clone, map[string]int{"go": 1, "map": 2})
+```
+
 ### Review questions: iteration and patterns
 
 1. Why is map iteration order unsuitable for program logic?
@@ -457,17 +529,28 @@ reads are common and profiling shows that the extra complexity is worthwhile.
 
 ```go
 type SafeInventory struct {
-	mu sync.RWMutex
-	m  map[string]int
+	mu         sync.RWMutex
+	quantities map[string]int
+}
+
+func (s *SafeInventory) Set(key string, value int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.quantities == nil {
+		s.quantities = make(map[string]int)
+	}
+	s.quantities[key] = value
 }
 
 func (s *SafeInventory) Lookup(key string) (int, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	value, ok := s.m[key]
+	value, ok := s.quantities[key]
 	return value, ok
 }
 ```
+
+The zero value is ready for use because `Set` initializes the internal map on the first write.
 
 An alternative is channel ownership: one goroutine owns the map and other goroutines send it
 requests. This is useful when map operations are part of a larger coordination protocol. `sync.Map`
@@ -477,7 +560,7 @@ of an ordinary map plus a mutex.
 Use the race detector as a separate check:
 
 ```bash
-go test -race ./04-slices-maps-defer/maps-lab
+go test -race ./05-slices-maps/maps-lab
 ```
 
 ### Internals for interviews
@@ -522,9 +605,9 @@ Read the official [Go 1.24 release notes](https://go.dev/doc/go1.24) and the Go 
 
 ### Related lab
 
-See [`04-slices-maps-defer/maps-lab`](../04-slices-maps-defer/maps-lab) for runnable basic map
+See [`05-slices-maps/maps-lab`](../05-slices-maps/maps-lab) for runnable basic map
 examples, reliable lookup examples, iteration, common patterns, safe concurrency, and focused unit tests.
 
 ```bash
-go test ./04-slices-maps-defer/maps-lab
+go test ./05-slices-maps/maps-lab
 ```

@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-// SafeInventory protects its map with an RWMutex.
+// SafeInventory protects its map with an RWMutex. Its zero value is ready for use.
 type SafeInventory struct {
 	mu         sync.RWMutex
 	quantities map[string]int
@@ -21,6 +21,9 @@ func (inventory *SafeInventory) Set(item string, quantity int) {
 	inventory.mu.Lock()
 	defer inventory.mu.Unlock()
 
+	if inventory.quantities == nil {
+		inventory.quantities = make(map[string]int)
+	}
 	inventory.quantities[item] = quantity
 }
 

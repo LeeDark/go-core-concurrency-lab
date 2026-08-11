@@ -12,10 +12,15 @@ func TestKeysContainsEveryMapKeyWithoutAssumingOrder(t *testing.T) {
 	if len(keys) != len(values) {
 		t.Fatalf("len(Keys(values)) = %d, want %d", len(keys), len(values))
 	}
+	seen := make(map[string]struct{}, len(keys))
 	for _, key := range keys {
 		if _, ok := values[key]; !ok {
 			t.Fatalf("Keys(values) contains unexpected key %q", key)
 		}
+		if _, duplicate := seen[key]; duplicate {
+			t.Fatalf("Keys(values) contains duplicate key %q", key)
+		}
+		seen[key] = struct{}{}
 	}
 }
 
@@ -48,6 +53,17 @@ func TestGroupByLengthPreservesOrderWithinGroups(t *testing.T) {
 
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("GroupByLength() = %v, want %v", got, want)
+	}
+}
+
+func TestGroupByLengthUsesByteLength(t *testing.T) {
+	got := GroupByLength([]string{"go", "ї"})
+
+	if !reflect.DeepEqual(got[2], []string{"go", "ї"}) {
+		t.Fatalf("GroupByLength byte-length 2 group = %v, want [go ї]", got[2])
+	}
+	if _, ok := got[1]; ok {
+		t.Fatalf("GroupByLength created a rune-length group: %v", got)
 	}
 }
 

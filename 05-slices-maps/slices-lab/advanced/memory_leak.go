@@ -1,4 +1,4 @@
-package sliceslab
+package slicesadvanced
 
 // TakeSmallPart returns a slice containing the first 10 bytes from a 100 MB byte slice.
 func TakeSmallPart() []byte {

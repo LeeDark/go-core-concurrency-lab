@@ -1,10 +1,9 @@
-# Slices, Maps, Defer
+# Slices and Maps
 
-This lab covers core Go collection and cleanup topics from the roadmap.
+This lab covers core Go collection topics from the roadmap.
 
 - Phase 1: Slices - finished, closed.
-- Phase 3: Maps - current.
-- Phase 4: Defer - planned.
+- Phase 3: Maps - finished, closed.
 
 ## Links
 
@@ -16,8 +15,12 @@ This lab covers core Go collection and cleanup topics from the roadmap.
 
 Slices are implemented as focused examples and tests under `slices-lab`. Phase 1 is closed.
 
-Maps are the current topic; defer is still planned. Keep future changes small and separate: do not
-mix map examples, defer examples, and slice review fixes in one broad rewrite.
+Maps are implemented as focused examples and tests under `maps-lab`. Phase 3 is closed. Defer is
+covered by Phase 4 and has a separate lab planned there.
+
+The default `main.go` run uses only the focused teaching examples. The advanced package contains
+intentionally problematic examples, benchmarks, and memory-retention demonstrations; run those
+explicitly while studying the related pitfalls.
 
 ## Slices
 
@@ -71,20 +74,10 @@ Learn to:
 
 Phase 3 is complete. Mutexes, channels, atomics, and `sync.Map` will be compared in depth in Phase 8.
 
-## Defer
-
-Planned focus:
-
-- use `defer` for cleanup;
-- understand LIFO execution order;
-- understand when deferred function arguments are evaluated;
-- avoid hiding important control flow;
-- use defer with files, locks, recovery examples, and small cleanup cases.
-
 ## Lab Files
 
 ```text
-04-slices-maps-defer/
+05-slices-maps/
   README.md
   main.go
   maps-lab/
@@ -93,6 +86,8 @@ Planned focus:
     concurrency.go
     concurrency_test.go
     maps.go
+    modern.go
+    modern_test.go
     patterns.go
     patterns_test.go
     state.go
@@ -101,19 +96,30 @@ Planned focus:
     append_copy.go
     append_copy_test.go
     helpers.go
-    memory_leak.go
-    mistakes.go
-    mistakes_test.go
+    modern.go
+    modern_test.go
     slices.go
+    advanced/
+      helpers.go
+      memory_leak.go
+      memory_leak_demo.go
+      mistakes.go
+      mistakes_test.go
 ```
 
 `slices-lab` contains focused slice examples and tests. Keep examples small enough to explain line by line.
+`slices-lab/advanced` contains intentionally problematic examples, memory-retention demonstrations,
+and benchmarks. It is a separate study layer and is not part of the default demo run.
 
-`maps-lab` contains the first focused map examples. `MapBasics` demonstrates each basic operation;
-`MapState` demonstrates comma-ok lookups and the difference between nil and empty maps. The tests
-verify their observable behavior without relying on iteration order. `MapPatterns` demonstrates how
-to make output deterministic and how to use maps for counting, grouping, indexing, and sets.
-`MapConcurrency` demonstrates a map protected by `sync.RWMutex`.
+`maps-lab` contains focused map examples. `MapBasics`, `MapState`, `MapPatterns`, and
+`MapConcurrency` are executable demonstrations whose output is intended for interactive study.
+Their underlying helpers and concurrency wrapper are tested directly without relying on stdout or
+map iteration order. `MapPatterns` demonstrates deterministic output and common map patterns for
+counting, grouping, indexing, and sets. `modern.go` demonstrates the built-in `clear` and the
+standard `slices` and `maps` packages.
+
+`SafeInventory` is safe to use as a zero value: the first write lazily initializes its internal map.
+`NewSafeInventory` remains available as an explicit constructor when that style is clearer.
 
 ### Focused Unit Tests
 
@@ -125,14 +131,22 @@ to make output deterministic and how to use maps for counting, grouping, indexin
 - in-place versus independent deletion;
 - clearing the unused tail after in-place deletion and filtering.
 
+`modern_test.go` covers `clear`, standard-library cloning, and standard-library deletion.
+
+The advanced benchmarks can be run with:
+
+```bash
+go test ./05-slices-maps/slices-lab/advanced -bench .
+```
+
 ## Targeted Checks
 
 Run only the focused package tests for this lab:
 
 ```bash
-go test ./04-slices-maps-defer/slices-lab
-go test ./04-slices-maps-defer/maps-lab
-go test -race ./04-slices-maps-defer/maps-lab
+go test ./05-slices-maps/slices-lab
+go test ./05-slices-maps/maps-lab
+go test -race ./05-slices-maps/maps-lab
 ```
 
 Avoid broad test runs such as `go test ./...` unless explicitly requested.
@@ -148,6 +162,9 @@ Slices:
 5. How does a full slice expression help prevent aliasing?
 6. What is the difference between a nil slice and an empty slice?
 7. How can a small subslice keep a large array in memory?
+8. What does `clear` change in a slice?
+9. What does `slices.Delete` do with the unused tail?
+10. What remains shared when a slice is passed to a function?
 
 Maps:
 
@@ -167,10 +184,9 @@ Maps:
 14. What does the race detector check, and why is a runtime concurrent-map failure not enough?
 15. Which parts of map internals may application code rely on?
 16. What changed in the Go 1.24 map implementation?
-
-Defer:
-
-1. When are deferred function arguments evaluated?
-2. In what order do multiple deferred calls run?
-3. What cleanup tasks are good candidates for `defer`?
-4. When can `defer` make control flow harder to read?
+17. Which types can be map keys, and which cannot?
+18. What does assigning one map variable to another copy?
+19. How do you update a field in a struct stored as a map value?
+20. What does the capacity argument to `make` mean for a map?
+21. What does `clear` do to a map?
+22. Which common operations are provided by the standard `maps` package?

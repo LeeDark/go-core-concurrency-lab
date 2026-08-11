@@ -74,7 +74,7 @@ is Phase 4, Defer, errors, context, and Worker Pool v2. See
 ## Repository Layout
 
 ```text
-04-slices-maps-defer/       Slice/map/defer notes and focused slice examples.
+05-slices-maps/             Slice/map notes and focused collection examples.
 06-worker-pool-v1/          Minimal worker pool with channels and WaitGroup.
 07-worker-pool-v2/          Planned lifecycle-focused worker pool notes.
 coding/                     Coding-practice exercises.
@@ -85,12 +85,14 @@ PLAN.md                     Roadmap for core topics and concurrency labs.
 
 ## Current Labs
 
-### Slices, Maps, Defer
+### Slices and Maps
 
-[`04-slices-maps-defer`](04-slices-maps-defer/README.md) focuses on slice internals: backing arrays,
-`len`, `cap`, `append`, `copy`, nil vs empty slices, aliasing, and common mistakes.
+[`05-slices-maps`](05-slices-maps/README.md) focuses on slice and map semantics: backing
+arrays, `len`, `cap`, `append`, `copy`, nil vs empty values, aliasing, map lookup, iteration, and
+common patterns.
 
-The `slices-lab` package contains small examples and targeted tests for slice behavior.
+The `slices-lab` and `maps-lab` packages contain small examples and targeted checks for collection
+behavior.
 
 ### Worker Pool v1
 
@@ -144,7 +146,9 @@ Prefer targeted commands for the lab you are working on.
 Examples:
 
 ```bash
-go test ./04-slices-maps-defer/slices-lab
+go test ./05-slices-maps/slices-lab
+go test ./05-slices-maps/maps-lab
+go test -race ./05-slices-maps/maps-lab
 go test ./06-worker-pool-v1/workerpool
 go test -race ./06-worker-pool-v1/workerpool
 ```

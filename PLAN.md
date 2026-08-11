@@ -70,7 +70,7 @@ Focus:
 
 Primary docs:
 
-- [`04-slices-maps-defer/README.md`](04-slices-maps-defer/README.md)
+- [`05-slices-maps/README.md`](05-slices-maps/README.md)
 - [`docs/cheatsheet-core.md`](docs/cheatsheet-core.md)
 
 Review checklist:
@@ -120,8 +120,8 @@ Focus:
 
 Completed output:
 
-- extend [`04-slices-maps-defer/README.md`](04-slices-maps-defer/README.md);
-- focused map examples and tests under `04-slices-maps-defer/`.
+- extend [`05-slices-maps/README.md`](05-slices-maps/README.md);
+- focused map examples and tests under `05-slices-maps/`.
 
 ## Phase 4: Defer, Errors, Context, And Worker Pool v2
 
@@ -299,7 +299,9 @@ Current example:
 Useful targeted checks:
 
 ```bash
-go test ./04-slices-maps-defer/slices-lab
+go test ./05-slices-maps/slices-lab
+go test ./05-slices-maps/maps-lab
+go test -race ./05-slices-maps/maps-lab
 go test ./06-worker-pool-v1/workerpool
 go test -race ./06-worker-pool-v1/workerpool
 ```
