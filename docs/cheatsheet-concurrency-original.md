@@ -1,5 +1,8 @@
 # Concurrency & Parallelism
 
+> Archived reference notes. The maintained source is
+> [cheatsheet-concurrency.md](cheatsheet-concurrency.md).
+
 - Concurrency is not how the real world works. The real world works with parallelism.
 - Parallelism is the natural way of thinking about multiple independent things interacting with each other.
 - Solution of a Problem in Concurrent Programming Control, Edsger Dijkstra, 1965.

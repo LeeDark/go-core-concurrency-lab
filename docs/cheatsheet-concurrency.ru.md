@@ -1,5 +1,12 @@
 # Конкурентность и параллелизм
 
+> Английский canonical source: [cheatsheet-concurrency.md](cheatsheet-concurrency.md).
+> Упрощённая версия: [cheatsheet-concurrency-simplified.md](cheatsheet-concurrency-simplified.md).
+> Архивные исходные заметки: [cheatsheet-concurrency-original.md](cheatsheet-concurrency-original.md).
+> Украинская версия concurrency cheatsheet пока не подготовлена.
+> Go-specific terms such as `goroutine`, `channel`, `worker` and `handler` are kept in English for
+> consistency with the code and the canonical version.
+
 ## Определения
 
 **Конкурентность (concurrency)** — это способ организовать программу как независимые вычислительные части, которые могут продвигаться вперёд не по строгому порядку или в частичном порядке, не меняя ожидаемый результат. Эти части могут чередоваться при разделении времени процессора или выполняться параллельно.

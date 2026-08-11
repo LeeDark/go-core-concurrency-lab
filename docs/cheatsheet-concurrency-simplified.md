@@ -1,5 +1,9 @@
 # Concurrency & Parallelism
 
+> Adapted summary of the [canonical concurrency cheatsheet](cheatsheet-concurrency.md).
+> Russian translation: [cheatsheet-concurrency.ru.md](cheatsheet-concurrency.ru.md).
+> Ukrainian translation: not available yet.
+
 **Concurrency** is a way to structure a program as independent parts that coordinate with each other. Those parts may be interleaved on one CPU or run at the same time on several CPUs.
 
 **Parallelism** is executing multiple pieces of work at the same time. It depends on available CPUs, the Go runtime, `GOMAXPROCS`, blocking, and synchronization.
@@ -27,7 +31,9 @@ M — OS thread
 P — logical processor used by the Go runtime
 ```
 
-`GOMAXPROCS` limits how many OS threads can execute Go code simultaneously. It usually defaults to the number of available CPUs. The runtime may still create more OS threads, for example when threads are blocked in system calls.
+`GOMAXPROCS` limits how many logical processors (`P`) can execute Go code simultaneously. It usually
+defaults to the number of available CPUs. The runtime may still create more OS threads, for example
+when threads are blocked in system calls.
 
 A goroutine is usually:
 
