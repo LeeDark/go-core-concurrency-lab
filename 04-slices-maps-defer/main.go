@@ -14,7 +14,6 @@ func main() {
 	sliceslab.AppendIntoFunc()
 
 	sliceslab.CopyAppend()
-	sliceslab.MemoryLeakSubslice()
 	sliceslab.SliceNilEmpty()
 	sliceslab.RangeOverSlice()
 
@@ -24,7 +23,6 @@ func main() {
 	sliceslab.Mistake23()
 	sliceslab.Mistake24()
 	sliceslab.Mistake25()
-	sliceslab.Mistake26()
 
 	mapslab.MapBasics()
 	mapslab.MapState()

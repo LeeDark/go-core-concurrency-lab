@@ -1,10 +1,9 @@
-# Slices, Maps, Defer
+# Slices and Maps
 
-This lab covers core Go collection and cleanup topics from the roadmap.
+This lab covers core Go collection topics from the roadmap.
 
 - Phase 1: Slices - finished, closed.
-- Phase 3: Maps - current.
-- Phase 4: Defer - planned.
+- Phase 3: Maps - finished, closed.
 
 ## Links
 
@@ -16,8 +15,11 @@ This lab covers core Go collection and cleanup topics from the roadmap.
 
 Slices are implemented as focused examples and tests under `slices-lab`. Phase 1 is closed.
 
-Maps are the current topic; defer is still planned. Keep future changes small and separate: do not
-mix map examples, defer examples, and slice review fixes in one broad rewrite.
+Maps are implemented as focused examples and tests under `maps-lab`. Phase 3 is closed. Defer is
+covered by Phase 4 and has a separate lab planned there.
+
+The default `main.go` run skips the memory-heavy retention demonstrations in `slices-lab`. Call
+`MemoryLeakSubslice` and `Mistake26` explicitly when studying those examples.
 
 ## Slices
 
@@ -70,16 +72,6 @@ Learn to:
 - explain the public map contract separately from runtime internals.
 
 Phase 3 is complete. Mutexes, channels, atomics, and `sync.Map` will be compared in depth in Phase 8.
-
-## Defer
-
-Planned focus:
-
-- use `defer` for cleanup;
-- understand LIFO execution order;
-- understand when deferred function arguments are evaluated;
-- avoid hiding important control flow;
-- use defer with files, locks, recovery examples, and small cleanup cases.
 
 ## Lab Files
 
@@ -167,10 +159,3 @@ Maps:
 14. What does the race detector check, and why is a runtime concurrent-map failure not enough?
 15. Which parts of map internals may application code rely on?
 16. What changed in the Go 1.24 map implementation?
-
-Defer:
-
-1. When are deferred function arguments evaluated?
-2. In what order do multiple deferred calls run?
-3. What cleanup tasks are good candidates for `defer`?
-4. When can `defer` make control flow harder to read?

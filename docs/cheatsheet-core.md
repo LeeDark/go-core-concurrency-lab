@@ -94,8 +94,9 @@ b = append(b, 99)
 fmt.Println(a) // [1 2 99 4]
 ```
 
-Use a full slice expression to limit the capacity exposed to a subslice. It forces a later `append`
-to allocate, but it does not copy the existing elements.
+Use a full slice expression to limit the capacity exposed to a subslice. When the third index equals
+the high index, the resulting capacity equals its length, so an `append` that adds an element must
+allocate. The expression does not copy the existing elements.
 
 ```go
 a := []int{1, 2, 3, 4}
@@ -228,8 +229,10 @@ intended.
 
 ### Concurrency
 
-Slices are not safe for concurrent mutation. If goroutines share a slice and at least one writes to
-it, coordinate access with synchronization or give each goroutine an independent copy.
+Concurrent reads of a slice are safe when no goroutine changes the relevant backing-array elements or
+shared slice state. Concurrent access to the same element or overlapping elements, and operations
+such as `append` that may write to shared backing storage, require synchronization. If ownership is
+unclear, give each goroutine an independent copy.
 
 ### Review questions
 

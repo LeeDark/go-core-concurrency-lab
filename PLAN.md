@@ -300,6 +300,8 @@ Useful targeted checks:
 
 ```bash
 go test ./04-slices-maps-defer/slices-lab
+go test ./04-slices-maps-defer/maps-lab
+go test -race ./04-slices-maps-defer/maps-lab
 go test ./06-worker-pool-v1/workerpool
 go test -race ./06-worker-pool-v1/workerpool
 ```
