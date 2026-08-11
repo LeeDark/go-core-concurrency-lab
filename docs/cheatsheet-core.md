@@ -2,6 +2,108 @@
 
 Translations: [Russian](cheatsheet-core.ru.md) · [Ukrainian](cheatsheet-core.ua.md).
 
+## Defer
+
+`defer` registers a function call to run before the current function returns. Its main use is local
+cleanup: closing files, unlocking mutexes, stopping timers, and calling cancel functions.
+
+### Basic behavior and LIFO
+
+Deferred calls run on function exit, including an early `return`. Multiple calls run in reverse
+registration order:
+
+```go
+func process() {
+	defer fmt.Println("release A")
+	defer fmt.Println("release B")
+	defer fmt.Println("release C")
+}
+// release C, release B, release A
+```
+
+The last registered cleanup runs first. This matches nested resource ownership: release an inner
+resource before the outer resource.
+
+### Argument evaluation versus closures
+
+Arguments to a deferred call are evaluated when the `defer` statement runs:
+
+```go
+x := 10
+defer fmt.Println(x)
+x = 20 // prints 10
+```
+
+A closure reads the variable when the deferred function runs:
+
+```go
+x := 10
+defer func() { fmt.Println(x) }()
+x = 20 // prints 20
+```
+
+### Cleanup after successful acquire
+
+Register cleanup immediately after successfully acquiring the resource:
+
+```go
+file, err := os.Open(name)
+if err != nil {
+	return err
+}
+defer file.Close()
+```
+
+Do not register cleanup before checking the acquire error: the resource may be nil, invalid, or not
+safe to close. Registering each cleanup after its acquire gives the correct reverse release order.
+
+### Named return values
+
+A deferred closure can change a named result before the function actually returns:
+
+```go
+func calculate() (result int) {
+	defer func() { result++ }()
+	return 10 // returns 11
+}
+```
+
+Changing a local variable does not change an already prepared unnamed return value. Use deferred
+result mutation sparingly; cleanup is the natural use of `defer`.
+
+### Panic and loops
+
+During ordinary panic unwinding, deferred calls run. `defer` does not recover the panic; `recover` is
+separate. `os.Exit` terminates the process without running deferred calls.
+
+`defer` inside a long loop keeps every resource until the surrounding function returns. For many
+files or connections, put one iteration in a helper function so its defer runs at the end of that
+iteration. Some cleanup methods return errors, so decide explicitly how those errors interact with
+the main operation error.
+
+### Review questions
+
+1. When does a deferred call run?
+2. In what order do multiple deferred calls run?
+3. When are deferred-call arguments evaluated?
+4. How does a deferred closure differ from a deferred call with an argument?
+5. Why should cleanup be registered immediately after a successful acquire?
+6. How can `defer` change a named return value?
+7. Why can defer inside a long loop hold too many resources?
+8. Do deferred calls run during ordinary panic unwinding?
+
+### Related examples
+
+Executable examples are in:
+
+```text
+03-defer-errors-context/defer/defer_examples_test.go
+```
+
+```bash
+go test ./03-defer-errors-context/defer
+```
+
 ## Slices
 
 ### Definition
