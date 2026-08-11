@@ -13,8 +13,7 @@ contains:
 - a length, returned by `len`;
 - a capacity, returned by `cap`.
 
-A slice does not store its elements itself. Copying a slice value copies only this descriptor, so
-two
+A slice does not store its elements itself. Copying a slice value copies only this descriptor, so two
 slices can refer to the same backing array.
 
 ```go
@@ -54,8 +53,7 @@ s := []int{1, 2}
 s = append(s, 3)
 ```
 
-If the slice has spare capacity, `append` may reuse its backing array. Other slices sharing that
-array
+If the slice has spare capacity, `append` may reuse its backing array. Other slices sharing that array
 can then observe the written elements.
 
 ```go
@@ -127,13 +125,13 @@ To make an independent clone while preserving the distinction between `nil` and 
 
 ```go
 func Clone[T any](s []T) []T {
-if s == nil {
-return nil
-}
+	if s == nil {
+		return nil
+	}
 
-out := make([]T, len(s))
-copy(out, s)
-return out
+	out := make([]T, len(s))
+	copy(out, s)
+	return out
 }
 ```
 
@@ -186,8 +184,8 @@ buffer can therefore retain roughly 100 MB of memory.
 
 ```go
 func firstTenBad() []byte {
-big := make([]byte, 100<<20)
-return big[:10]
+	big := make([]byte, 100<<20)
+	return big[:10]
 }
 ```
 
@@ -195,33 +193,32 @@ Copy the small part before returning it when the large buffer is no longer neede
 
 ```go
 func firstTenGood() []byte {
-big := make([]byte, 100<<20)
-small := make([]byte, 10)
-copy(small, big[:10])
-return small
+	big := make([]byte, 100<<20)
+	small := make([]byte, 10)
+	copy(small, big[:10])
+	return small
 }
 ```
 
 ### Common operations and ownership
 
-In-place operations reuse the backing array and may modify the input slice's elements. A function
-that
+In-place operations reuse the backing array and may modify the input slice's elements. A function that
 returns a new slice allocates separate storage and leaves the input unchanged.
 
 ```go
 // In place: the input's backing array is modified.
 func DeleteAt[T any](s []T, i int) []T {
-copy(s[i:], s[i+1:])
-var zero T
-s[len(s)-1] = zero // release a reference held in the unused tail, if any
-return s[:len(s)-1]
+	copy(s[i:], s[i+1:])
+	var zero T
+	s[len(s)-1] = zero // release a reference held in the unused tail, if any
+	return s[:len(s)-1]
 }
 
 // New slice: the input is unchanged.
 func DeleteAtNew[T any](s []T, i int) []T {
-out := make([]T, 0, len(s)-1)
-out = append(out, s[:i]...)
-return append(out, s[i+1:]...)
+	out := make([]T, 0, len(s)-1)
+	out = append(out, s[:i]...)
+	return append(out, s[i+1:]...)
 }
 ```
 
@@ -230,17 +227,16 @@ the caller's slice.
 
 ### `range` over slices
 
-The value produced by `range` is a copy of the element. Change elements through their index when
-needed.
+The value produced by `range` is a copy of the element. Change elements through their index when needed.
 
 ```go
 s := []int{1, 2, 3}
 for _, v := range s {
-v *= 10 // changes only the copy
+	v *= 10 // changes only the copy
 }
 
 for i := range s {
-s[i] *= 10 // changes the slice element
+	s[i] *= 10 // changes the slice element
 }
 ```
 
