@@ -294,13 +294,13 @@ unclear, give each goroutine an independent copy.
 
 ### Related lab
 
-See [`04-slices-maps-defer/slices-lab`](../04-slices-maps-defer/slices-lab) for runnable examples.
+See [`05-slices-maps/slices-lab`](../05-slices-maps/slices-lab) for runnable examples.
 Its seven focused unit tests cover clone semantics, input ownership during append and deletion, and
 zeroing the unused tail after in-place operations.
 Run the focused package check with:
 
 ```bash
-go test ./04-slices-maps-defer/slices-lab
+go test ./05-slices-maps/slices-lab
 ```
 
 ## Maps
@@ -553,7 +553,7 @@ of an ordinary map plus a mutex.
 Use the race detector as a separate check:
 
 ```bash
-go test -race ./04-slices-maps-defer/maps-lab
+go test -race ./05-slices-maps/maps-lab
 ```
 
 ### Internals for interviews
@@ -598,9 +598,9 @@ Read the official [Go 1.24 release notes](https://go.dev/doc/go1.24) and the Go 
 
 ### Related lab
 
-See [`04-slices-maps-defer/maps-lab`](../04-slices-maps-defer/maps-lab) for runnable basic map
+See [`05-slices-maps/maps-lab`](../05-slices-maps/maps-lab) for runnable basic map
 examples, reliable lookup examples, iteration, common patterns, safe concurrency, and focused unit tests.
 
 ```bash
-go test ./04-slices-maps-defer/maps-lab
+go test ./05-slices-maps/maps-lab
 ```

@@ -293,13 +293,13 @@ for i := range s {
 
 ### Пов'язана лабораторна робота
 
-Див. [`04-slices-maps-defer/slices-lab`](../04-slices-maps-defer/slices-lab) із прикладами, які можна
+Див. [`05-slices-maps/slices-lab`](../05-slices-maps/slices-lab) із прикладами, які можна
 запустити. Сім focused unit-тестів перевіряють семантику клонування, володіння вхідними даними під
 час append і видалення, а також занулення невикористаного хвоста після операцій in-place.
 Focused-перевірка пакета:
 
 ```bash
-go test ./04-slices-maps-defer/slices-lab
+go test ./05-slices-maps/slices-lab
 ```
 
 ## Мапи (maps)
@@ -554,7 +554,7 @@ func (s *SafeInventory) Lookup(key string) (int, bool) {
 Використовуйте детектор гонок як окрему перевірку:
 
 ```bash
-go test -race ./04-slices-maps-defer/maps-lab
+go test -race ./05-slices-maps/maps-lab
 ```
 
 ### Внутрішня будова для співбесіди
@@ -600,10 +600,10 @@ Go зберігає поступове зростання для програм,
 
 ### Пов'язана лабораторна робота
 
-Див. [`04-slices-maps-defer/maps-lab`](../04-slices-maps-defer/maps-lab) із прикладами базових
+Див. [`05-slices-maps/maps-lab`](../05-slices-maps/maps-lab) із прикладами базових
 операцій з мапами, надійної перевірки ключа, обходу, прийомів, безпечного конкурентного доступу,
 які можна запустити, та цільових модульних тестів.
 
 ```bash
-go test ./04-slices-maps-defer/maps-lab
+go test ./05-slices-maps/maps-lab
 ```

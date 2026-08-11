@@ -76,7 +76,7 @@ Phase 3 is complete. Mutexes, channels, atomics, and `sync.Map` will be compared
 ## Lab Files
 
 ```text
-04-slices-maps-defer/
+05-slices-maps/
   README.md
   main.go
   maps-lab/
@@ -131,9 +131,9 @@ to make output deterministic and how to use maps for counting, grouping, indexin
 Run only the focused package tests for this lab:
 
 ```bash
-go test ./04-slices-maps-defer/slices-lab
-go test ./04-slices-maps-defer/maps-lab
-go test -race ./04-slices-maps-defer/maps-lab
+go test ./05-slices-maps/slices-lab
+go test ./05-slices-maps/maps-lab
+go test -race ./05-slices-maps/maps-lab
 ```
 
 Avoid broad test runs such as `go test ./...` unless explicitly requested.

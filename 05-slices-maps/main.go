@@ -1,8 +1,8 @@
 package main
 
 import (
-	mapslab "github.com/LeeDark/go-core-concurrency-lab/04-slices-maps-defer/maps-lab"
-	sliceslab "github.com/LeeDark/go-core-concurrency-lab/04-slices-maps-defer/slices-lab"
+	mapslab "github.com/LeeDark/go-core-concurrency-lab/05-slices-maps/maps-lab"
+	sliceslab "github.com/LeeDark/go-core-concurrency-lab/05-slices-maps/slices-lab"
 )
 
 func main() {

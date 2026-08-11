@@ -74,7 +74,7 @@ is Phase 4, Defer, errors, context, and Worker Pool v2. See
 ## Repository Layout
 
 ```text
-04-slices-maps-defer/       Slice/map notes and focused collection examples.
+05-slices-maps/             Slice/map notes and focused collection examples.
 06-worker-pool-v1/          Minimal worker pool with channels and WaitGroup.
 07-worker-pool-v2/          Planned lifecycle-focused worker pool notes.
 coding/                     Coding-practice exercises.
@@ -87,7 +87,7 @@ PLAN.md                     Roadmap for core topics and concurrency labs.
 
 ### Slices and Maps
 
-[`04-slices-maps-defer`](04-slices-maps-defer/README.md) focuses on slice and map semantics: backing
+[`05-slices-maps`](05-slices-maps/README.md) focuses on slice and map semantics: backing
 arrays, `len`, `cap`, `append`, `copy`, nil vs empty values, aliasing, map lookup, iteration, and
 common patterns.
 
@@ -146,9 +146,9 @@ Prefer targeted commands for the lab you are working on.
 Examples:
 
 ```bash
-go test ./04-slices-maps-defer/slices-lab
-go test ./04-slices-maps-defer/maps-lab
-go test -race ./04-slices-maps-defer/maps-lab
+go test ./05-slices-maps/slices-lab
+go test ./05-slices-maps/maps-lab
+go test -race ./05-slices-maps/maps-lab
 go test ./06-worker-pool-v1/workerpool
 go test -race ./06-worker-pool-v1/workerpool
 ```
