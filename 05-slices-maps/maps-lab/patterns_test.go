@@ -56,6 +56,17 @@ func TestGroupByLengthPreservesOrderWithinGroups(t *testing.T) {
 	}
 }
 
+func TestGroupByLengthUsesByteLength(t *testing.T) {
+	got := GroupByLength([]string{"go", "ї"})
+
+	if !reflect.DeepEqual(got[2], []string{"go", "ї"}) {
+		t.Fatalf("GroupByLength byte-length 2 group = %v, want [go ї]", got[2])
+	}
+	if _, ok := got[1]; ok {
+		t.Fatalf("GroupByLength created a rune-length group: %v", got)
+	}
+}
+
 func TestIndexByIDKeepsLaterUserForDuplicateID(t *testing.T) {
 	got := IndexByID([]User{
 		{ID: 10, Name: "Ana"},

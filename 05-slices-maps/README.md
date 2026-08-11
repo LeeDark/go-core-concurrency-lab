@@ -111,12 +111,12 @@ Phase 3 is complete. Mutexes, channels, atomics, and `sync.Map` will be compared
 `slices-lab/advanced` contains intentionally problematic examples, memory-retention demonstrations,
 and benchmarks. It is a separate study layer and is not part of the default demo run.
 
-`maps-lab` contains focused map examples. `MapBasics` demonstrates each basic operation;
-`MapState` demonstrates comma-ok lookups and the difference between nil and empty maps. The tests
-verify their observable behavior without relying on iteration order. `MapPatterns` demonstrates how
-to make output deterministic and how to use maps for counting, grouping, indexing, and sets.
-`MapConcurrency` demonstrates a map protected by `sync.RWMutex`. `modern.go` demonstrates the built-in
-`clear` and the standard `slices` and `maps` packages.
+`maps-lab` contains focused map examples. `MapBasics`, `MapState`, `MapPatterns`, and
+`MapConcurrency` are executable demonstrations whose output is intended for interactive study.
+Their underlying helpers and concurrency wrapper are tested directly without relying on stdout or
+map iteration order. `MapPatterns` demonstrates deterministic output and common map patterns for
+counting, grouping, indexing, and sets. `modern.go` demonstrates the built-in `clear` and the
+standard `slices` and `maps` packages.
 
 `SafeInventory` is safe to use as a zero value: the first write lazily initializes its internal map.
 `NewSafeInventory` remains available as an explicit constructor when that style is clearer.

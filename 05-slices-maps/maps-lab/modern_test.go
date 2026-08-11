@@ -18,6 +18,12 @@ func TestClearInventoryKeepsMapWritable(t *testing.T) {
 	}
 }
 
+func TestClearInventoryIsSafeForNilMap(t *testing.T) {
+	var inventory map[string]int
+
+	ClearInventory(inventory)
+}
+
 func TestCloneInventoryIsIndependentAndPreservesNil(t *testing.T) {
 	var nilInventory map[string]int
 	if got := CloneInventory(nilInventory); got != nil {

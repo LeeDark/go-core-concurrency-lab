@@ -1,6 +1,7 @@
 package sliceslab
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -10,6 +11,18 @@ func TestCloneSliceCopyPreservesNil(t *testing.T) {
 
 	if got != nil {
 		t.Fatalf("CloneSliceCopy(nil) = %v, want nil", got)
+	}
+}
+
+func TestCloneSliceCopyPreservesNonNilEmptySlice(t *testing.T) {
+	input := make([]int, 0)
+	got := CloneSliceCopy(input)
+
+	if got == nil {
+		t.Fatal("CloneSliceCopy(empty) = nil, want non-nil empty slice")
+	}
+	if len(got) != 0 {
+		t.Fatalf("len(CloneSliceCopy(empty)) = %d, want 0", len(got))
 	}
 }
 
@@ -73,6 +86,34 @@ func TestDeleteAtNewDoesNotModifyInput(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, []int{99, 30, 40}) {
 		t.Fatalf("result = %v, want [99 30 40]", got)
+	}
+}
+
+func TestDeleteAtRejectsInvalidIndex(t *testing.T) {
+	for _, index := range []int{-1, 2} {
+		t.Run(fmt.Sprintf("index_%d", index), func(t *testing.T) {
+			defer func() {
+				if recover() == nil {
+					t.Fatalf("DeleteAt(index=%d) did not panic", index)
+				}
+			}()
+
+			DeleteAt([]int{1, 2}, index)
+		})
+	}
+}
+
+func TestDeleteAtNewRejectsInvalidIndex(t *testing.T) {
+	for _, index := range []int{-1, 2} {
+		t.Run(fmt.Sprintf("index_%d", index), func(t *testing.T) {
+			defer func() {
+				if recover() == nil {
+					t.Fatalf("DeleteAtNew(index=%d) did not panic", index)
+				}
+			}()
+
+			DeleteAtNew([]int{1, 2}, index)
+		})
 	}
 }
 

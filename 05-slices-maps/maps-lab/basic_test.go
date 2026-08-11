@@ -83,3 +83,11 @@ func TestRemoveItemIsSafeForNilMap(t *testing.T) {
 
 	RemoveItem(inventory, "apples")
 }
+
+func TestQuantityReadsNilMapAsZero(t *testing.T) {
+	var inventory map[string]int
+
+	if got := Quantity(inventory, "apples"); got != 0 {
+		t.Fatalf("Quantity(nil inventory, apples) = %d, want 0", got)
+	}
+}
