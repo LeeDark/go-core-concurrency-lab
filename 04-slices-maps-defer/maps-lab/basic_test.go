@@ -51,6 +51,16 @@ func TestQuantityReturnsZeroValueForMissingItem(t *testing.T) {
 	}
 }
 
+func TestSetQuantityMutatesTheCallerMap(t *testing.T) {
+	inventory := NewInventory()
+
+	SetQuantity(inventory, "apples", 10)
+
+	if got := inventory["apples"]; got != 10 {
+		t.Fatalf("caller map after SetQuantity = %d, want 10", got)
+	}
+}
+
 func TestRemoveItem(t *testing.T) {
 	inventory := NewInventoryLiteral()
 
@@ -66,4 +76,10 @@ func TestRemoveItem(t *testing.T) {
 	if got := len(inventory); got != 1 {
 		t.Fatalf("len after deleting missing item = %d, want 1", got)
 	}
+}
+
+func TestRemoveItemIsSafeForNilMap(t *testing.T) {
+	var inventory map[string]int
+
+	RemoveItem(inventory, "apples")
 }

@@ -112,6 +112,8 @@ to make output deterministic and how to use maps for counting, grouping, indexin
 `MapConcurrency` demonstrates a map protected by `sync.RWMutex`. `modern.go` demonstrates the built-in
 `clear` and the standard `slices` and `maps` packages.
 
+`SafeInventory` requires `NewSafeInventory` before writes because its zero value contains a nil map.
+
 ### Focused Unit Tests
 
 `append_copy_test.go` contains seven focused tests for slice ownership and mutation behavior:

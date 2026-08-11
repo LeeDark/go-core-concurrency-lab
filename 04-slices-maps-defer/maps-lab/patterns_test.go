@@ -12,10 +12,15 @@ func TestKeysContainsEveryMapKeyWithoutAssumingOrder(t *testing.T) {
 	if len(keys) != len(values) {
 		t.Fatalf("len(Keys(values)) = %d, want %d", len(keys), len(values))
 	}
+	seen := make(map[string]struct{}, len(keys))
 	for _, key := range keys {
 		if _, ok := values[key]; !ok {
 			t.Fatalf("Keys(values) contains unexpected key %q", key)
 		}
+		if _, duplicate := seen[key]; duplicate {
+			t.Fatalf("Keys(values) contains duplicate key %q", key)
+		}
+		seen[key] = struct{}{}
 	}
 }
 

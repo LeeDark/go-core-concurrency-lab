@@ -90,3 +90,18 @@ func TestFilterInPlaceKeepsValuesAndClearsTail(t *testing.T) {
 		t.Fatalf("input backing array = %v, want [2 4 6 0 0 0]", input)
 	}
 }
+
+func TestFilterNewSliceDoesNotModifyInput(t *testing.T) {
+	input := []int{1, 2, 3, 4}
+
+	got := FilterNewSlice(input, func(value int) bool {
+		return value%2 == 0
+	})
+
+	if !reflect.DeepEqual(got, []int{2, 4}) {
+		t.Fatalf("FilterNewSlice(input) = %v, want [2 4]", got)
+	}
+	if !reflect.DeepEqual(input, []int{1, 2, 3, 4}) {
+		t.Fatalf("input after FilterNewSlice = %v, want unchanged", input)
+	}
+}

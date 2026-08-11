@@ -5,7 +5,8 @@ import (
 	"sync"
 )
 
-// SafeInventory protects its map with an RWMutex.
+// SafeInventory protects its map with an RWMutex. Its zero value is not ready for writes;
+// use NewSafeInventory to initialize the internal map.
 type SafeInventory struct {
 	mu         sync.RWMutex
 	quantities map[string]int
