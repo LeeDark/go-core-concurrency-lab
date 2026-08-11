@@ -8,6 +8,53 @@ import (
 	"time"
 )
 
+const resultWaitTimeout = time.Second
+
+func collectResults(t *testing.T, results <-chan Result) []Result {
+	t.Helper()
+
+	var collected []Result
+	timer := time.NewTimer(resultWaitTimeout)
+	defer timer.Stop()
+
+	for {
+		select {
+		case result, ok := <-results:
+			if !ok {
+				return collected
+			}
+			collected = append(collected, result)
+		case <-timer.C:
+			t.Fatal("results channel did not close before timeout")
+			return nil
+		}
+	}
+}
+
+func receiveResult(t *testing.T, results <-chan Result) (Result, bool) {
+	t.Helper()
+
+	timer := time.NewTimer(resultWaitTimeout)
+	defer timer.Stop()
+
+	select {
+	case result, ok := <-results:
+		return result, ok
+	case <-timer.C:
+		t.Fatal("did not receive result before timeout")
+		return Result{}, false
+	}
+}
+
+func assertResultsClosed(t *testing.T, results <-chan Result) {
+	t.Helper()
+
+	_, ok := receiveResult(t, results)
+	if ok {
+		t.Fatal("results channel is still open")
+	}
+}
+
 func TestPoolProcessesAllJobs(t *testing.T) {
 	jobs := make(chan Job)
 	results := Run(3, jobs, func(job Job) Result {
@@ -29,7 +76,7 @@ func TestPoolProcessesAllJobs(t *testing.T) {
 	}()
 
 	received := make(map[int]Result)
-	for result := range results {
+	for _, result := range collectResults(t, results) {
 		received[result.JobID] = result
 	}
 
@@ -79,7 +126,7 @@ func TestPoolHandlesJobErrors(t *testing.T) {
 	}()
 
 	var failed Result
-	for result := range results {
+	for _, result := range collectResults(t, results) {
 		if result.JobID == 2 {
 			failed = result
 		}
@@ -103,19 +150,13 @@ func TestPoolClosesResults(t *testing.T) {
 		jobs <- Job{ID: 2}
 	}()
 
-	count := 0
-	for range results {
-		count++
-	}
+	count := len(collectResults(t, results))
 
 	if count != 2 {
 		t.Fatalf("received %d results, want 2", count)
 	}
 
-	_, ok := <-results
-	if ok {
-		t.Fatal("results channel is still open")
-	}
+	assertResultsClosed(t, results)
 }
 
 func TestPoolKeepsResultsOpenUntilWorkerExits(t *testing.T) {
@@ -135,7 +176,11 @@ func TestPoolKeepsResultsOpenUntilWorkerExits(t *testing.T) {
 		jobs <- Job{ID: 1}
 	}()
 
-	<-workerStarted
+	select {
+	case <-workerStarted:
+	case <-time.After(resultWaitTimeout):
+		t.Fatal("worker did not start before timeout")
+	}
 
 	select {
 	case _, ok := <-results:
@@ -149,7 +194,7 @@ func TestPoolKeepsResultsOpenUntilWorkerExits(t *testing.T) {
 
 	close(releaseWorker)
 
-	result, ok := <-results
+	result, ok := receiveResult(t, results)
 	if !ok {
 		t.Fatal("results closed before receiving the worker result")
 	}
@@ -157,10 +202,7 @@ func TestPoolKeepsResultsOpenUntilWorkerExits(t *testing.T) {
 		t.Fatalf("result job ID = %d, want 1", result.JobID)
 	}
 
-	_, ok = <-results
-	if ok {
-		t.Fatal("results channel is still open after the worker exited")
-	}
+	assertResultsClosed(t, results)
 }
 
 func TestPoolNormalizesNonPositiveWorkerCount(t *testing.T) {
@@ -174,10 +216,7 @@ func TestPoolNormalizesNonPositiveWorkerCount(t *testing.T) {
 		jobs <- Job{ID: 1}
 	}()
 
-	count := 0
-	for range results {
-		count++
-	}
+	count := len(collectResults(t, results))
 
 	if count != 1 {
 		t.Fatalf("received %d results, want 1", count)

@@ -36,6 +36,7 @@ Include:
 - handler function;
 - `sync.WaitGroup`;
 - one goroutine that closes `results` after all workers finish.
+- focused tests for the core lifecycle contract.
 
 Do not include:
 
@@ -46,7 +47,6 @@ Do not include:
 - goroutine leak checks;
 - race-detector work;
 - advanced error handling;
-- tests unless explicitly requested.
 
 Those topics belong to Worker Pool v2.
 
@@ -285,28 +285,6 @@ When the caller closes `jobs`, each worker finishes its `range jobs` loop after 
 The coordinator is the one place that knows all workers have finished. It calls `wg.Wait()` and then closes `results` exactly once. The caller can therefore safely use `for result := range results`.
 
 If multiple goroutines send to the same channel, they must coordinate channel closure. No individual sender should close the channel unless it can prove that every sender is finished.
-
-### Interview checkpoints
-
-1. Who closes `jobs`?
-
-   The caller, because it owns sending jobs.
-
-2. Who closes `results`?
-
-   The pool coordinator, after `wg.Wait()` confirms that every worker has exited.
-
-3. Why should a worker not close `results`?
-
-   One worker cannot know whether another worker will send another result.
-
-4. What happens when a worker ranges over closed `jobs`?
-
-   It receives buffered jobs first and then exits the loop.
-
-5. What happens if the consumer stops reading `results`?
-
-   Workers can block while sending. They cannot exit, so the `WaitGroup` cannot finish and `results` cannot be closed. Worker Pool v1 documents this behavior; cancellation belongs to v2.
 
 ## Small Demo Flow
 
