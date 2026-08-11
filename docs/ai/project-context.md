@@ -8,7 +8,9 @@ Phase 1, Slices, is finished and closed.
 
 Phase 2, Worker Pool v1, is finished and closed.
 
-The current work is Phase 3, Maps.
+Phase 3, Maps, is finished and closed.
+
+The current work is Phase 4, Defer, errors, context, and Worker Pool v2.
 
 Use `PLAN.md` as the source of truth for the roadmap and phase priorities.
 
@@ -36,8 +38,8 @@ The current priorities group that path into phases:
 |-------|-------------------------------------------------|--------------------------|
 | 1     | Slices                                          | Finished, closed         |
 | 2     | Worker Pool v1                                  | Finished, closed         |
-| 3     | Maps                                            | Current                  |
-| 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
+| 3     | Maps                                            | Finished, closed         |
+| 4     | Defer, errors, context, and Worker Pool v2      | Current                  |
 | 5     | Race detector, memory model, and runtime        | Planned                  |
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |
 | 7     | Structure and Pipeline v2                       | Planned                  |

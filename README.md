@@ -15,7 +15,7 @@ github.com/LeeDark/go-core-concurrency-lab
 Go version:
 
 ```text
-1.25.6
+1.26.4
 ```
 
 ## Learning Sequence
@@ -48,15 +48,16 @@ The private study plan pairs core topics with concurrency labs:
 | Step 6: generics, tooling, workspaces | Step 12: race detector |
 
 The current priorities group that path into phases. Phase 1, Slices, is finished and closed.
-Phase 2, Worker Pool v1, is finished and closed. The current work is Phase 3, Maps. See
+Phase 2, Worker Pool v1, is finished and closed. Phase 3, Maps, is finished and closed. The
+current work is Phase 4, Defer, errors, context, and Worker Pool v2. See
 [`PLAN.md`](PLAN.md) for the full roadmap.
 
 | Phase | Topic                                           | Status                   |
 |-------|-------------------------------------------------|--------------------------|
 | 1     | Slices                                          | Finished, closed         |
 | 2     | Worker Pool v1                                  | Finished, closed         |
-| 3     | Maps                                            | Current                  |
-| 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
+| 3     | Maps                                            | Finished, closed         |
+| 4     | Defer, errors, context, and Worker Pool v2      | Current                  |
 | 5     | Race detector, memory model, and runtime        | Planned                  |
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |
 | 7     | Structure and Pipeline v2                       | Planned                  |
@@ -66,24 +67,16 @@ Phase 2, Worker Pool v1, is finished and closed. The current work is Phase 3, Ma
 ## Repository Layout
 
 ```text
-01-project-structure/       Notes for modules, packages, visibility, internal packages.
 04-slices-maps-defer/       Slice/map/defer notes and focused slice examples.
 06-worker-pool-v1/          Minimal worker pool with channels and WaitGroup.
 07-worker-pool-v2/          Planned lifecycle-focused worker pool notes.
 coding/                     Coding-practice exercises.
 docs/                       Core and concurrency cheatsheets.
 docs/ai/project-context.md  AI-assistant project context and learning boundaries.
-go-release-history.md       Go release notes summary.
 PLAN.md                     Roadmap for core topics and concurrency labs.
 ```
 
 ## Current Labs
-
-### Project Structure
-
-[`01-project-structure`](01-project-structure/README.md) covers module layout, package naming,
-exported and unexported identifiers, `internal` packages, command packages, and documentation
-comments.
 
 ### Slices, Maps, Defer
 
@@ -133,8 +126,6 @@ control:
 - [`docs/cheatsheet-core.md`](docs/cheatsheet-core.md) contains core Go notes.
 - [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md) contains concurrency,
   goroutine, channel, worker-pool, scheduler, and interview notes.
-- [`go-release-history.md`](go-release-history.md) tracks selected Go release changes.
-
 ## Running Focused Checks
 
 Prefer targeted commands for the lab you are working on.

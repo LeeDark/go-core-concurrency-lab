@@ -39,8 +39,8 @@ The current priorities group that path into phases:
 |-------|-------------------------------------------------|--------------------------|
 | 1     | Slices                                          | Finished, closed         |
 | 2     | Worker Pool v1                                  | Finished, closed         |
-| 3     | Maps                                            | Current                  |
-| 4     | Defer, errors, context, and Worker Pool v2      | Planned                  |
+| 3     | Maps                                            | Finished, closed         |
+| 4     | Defer, errors, context, and Worker Pool v2      | Current                  |
 | 5     | Race detector, memory model, and runtime        | Planned                  |
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |
 | 7     | Structure and Pipeline v2                       | Planned                  |
@@ -100,7 +100,7 @@ Stop line:
 
 ## Phase 3: Maps
 
-Current work.
+Finished and closed.
 
 Focus:
 
@@ -111,12 +111,14 @@ Focus:
 - avoid concurrent map reads/writes without synchronization;
 - use maps for counting, grouping, indexing, and set-like behavior.
 
-Planned output:
+Completed output:
 
 - extend [`04-slices-maps-defer/README.md`](04-slices-maps-defer/README.md);
-- add focused map examples and tests under `04-slices-maps-defer/`.
+- focused map examples and tests under `04-slices-maps-defer/`.
 
 ## Phase 4: Defer, Errors, Context, And Worker Pool v2
+
+Current work.
 
 Core focus:
 
@@ -161,7 +163,6 @@ Focus:
 Primary docs:
 
 - [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md)
-- [`go-release-history.md`](go-release-history.md)
 
 Planned output:
 
@@ -208,7 +209,6 @@ Concurrency focus:
 
 Primary docs:
 
-- [`01-project-structure/README.md`](01-project-structure/README.md)
 - [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md)
 
 Planned output:
