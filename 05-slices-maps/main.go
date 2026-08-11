@@ -17,13 +17,6 @@ func main() {
 	sliceslab.SliceNilEmpty()
 	sliceslab.RangeOverSlice()
 
-	sliceslab.Mistake20()
-	sliceslab.Mistake21()
-	sliceslab.Mistake22()
-	sliceslab.Mistake23()
-	sliceslab.Mistake24()
-	sliceslab.Mistake25()
-
 	mapslab.MapBasics()
 	mapslab.MapState()
 	mapslab.MapPatterns()

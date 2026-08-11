@@ -1,4 +1,4 @@
-package sliceslab
+package slicesadvanced
 
 import (
 	"encoding/json"

@@ -307,19 +307,6 @@ func CopyAppend() {
 	printlnSlice("n", n)
 }
 
-// MemoryLeakSubslice 2: memory leak with subslice
-func MemoryLeakSubslice() {
-	fmt.Printf("\nMemory Leak with Subslice\n\n")
-
-	bad := TakeSmallPart()
-	goodCopy := TakeSmallPartSafeCopy()
-	goodAppend := TakeSmallPartSafeAppend()
-
-	printlnSlice("bad", bad)
-	printlnSlice("goodCopy", goodCopy)
-	printlnSlice("goodAppend", goodAppend)
-}
-
 // SliceNilEmpty 2: nil slice vs empty slice
 func SliceNilEmpty() {
 	fmt.Printf("\nnil Slice vs Empty Slice\n\n")

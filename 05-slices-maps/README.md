@@ -18,8 +18,9 @@ Slices are implemented as focused examples and tests under `slices-lab`. Phase 1
 Maps are implemented as focused examples and tests under `maps-lab`. Phase 3 is closed. Defer is
 covered by Phase 4 and has a separate lab planned there.
 
-The default `main.go` run skips the memory-heavy retention demonstrations in `slices-lab`. Call
-`MemoryLeakSubslice` and `Mistake26` explicitly when studying those examples.
+The default `main.go` run uses only the focused teaching examples. The advanced package contains
+intentionally problematic examples, benchmarks, and memory-retention demonstrations; run those
+explicitly while studying the related pitfalls.
 
 ## Slices
 
@@ -95,15 +96,20 @@ Phase 3 is complete. Mutexes, channels, atomics, and `sync.Map` will be compared
     append_copy.go
     append_copy_test.go
     helpers.go
-    memory_leak.go
     modern.go
     modern_test.go
-    mistakes.go
-    mistakes_test.go
     slices.go
+    advanced/
+      helpers.go
+      memory_leak.go
+      memory_leak_demo.go
+      mistakes.go
+      mistakes_test.go
 ```
 
 `slices-lab` contains focused slice examples and tests. Keep examples small enough to explain line by line.
+`slices-lab/advanced` contains intentionally problematic examples, memory-retention demonstrations,
+and benchmarks. It is a separate study layer and is not part of the default demo run.
 
 `maps-lab` contains focused map examples. `MapBasics` demonstrates each basic operation;
 `MapState` demonstrates comma-ok lookups and the difference between nil and empty maps. The tests
@@ -125,6 +131,12 @@ to make output deterministic and how to use maps for counting, grouping, indexin
 - clearing the unused tail after in-place deletion and filtering.
 
 `modern_test.go` covers `clear`, standard-library cloning, and standard-library deletion.
+
+The advanced benchmarks can be run with:
+
+```bash
+go test ./05-slices-maps/slices-lab/advanced -bench .
+```
 
 ## Targeted Checks
 
