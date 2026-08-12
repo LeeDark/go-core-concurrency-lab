@@ -65,9 +65,9 @@ Those belong to later labs.
 
 If v1 already has a clean `workerpool` package, copy the idea and evolve the API here.
 
-## Possible API
+## API Contract
 
-Start with this shape:
+Use this shape for the first v2 implementation:
 
 ```go
 type Job struct {
@@ -89,13 +89,51 @@ func Run(
 ) <-chan Result
 ```
 
-Why this API:
+The ownership contract is:
 
-- caller controls cancellation;
-- workers can stop when `ctx.Done()` is closed;
-- handler receives the same context;
-- pool still owns `results`;
-- caller still owns `jobs`.
+- caller creates and cancels `ctx`;
+- caller sends to and closes `jobs`;
+- pool only receives from `jobs` and never closes or drains it;
+- pool sends to and closes `results`;
+- caller only receives from `results` and never closes it;
+- workers receive the same `ctx` through the handler.
+
+Additional rules:
+
+- `workerCount <= 0` is normalized to one worker, matching Worker Pool v1;
+- result order is not guaranteed;
+- cancellation may stop workers from receiving new jobs;
+- jobs already queued may remain unprocessed after cancellation;
+- a handler that is already running stops only if it observes the context;
+- `results` is closed only after every worker has exited.
+
+The pool does not forcibly stop a handler that ignores the context. The producer must also observe
+the context while sending jobs and close `jobs` when it owns that sending lifecycle:
+
+```go
+for _, job := range submittedJobs {
+	select {
+	case jobs <- job:
+	case <-ctx.Done():
+		return
+	}
+}
+close(jobs)
+```
+
+If the producer ignores cancellation, it remains the producer's responsibility and may block
+forever on a send.
+
+### Error Policy
+
+Keep the first v2 pass simple:
+
+- each job completed by the handler produces one `Result`;
+- a job-level failure is stored in `Result.Err`;
+- cancellation may prevent remaining jobs from producing results;
+- no separate errors channel is introduced;
+- cancellation of the whole operation is represented by the context, not by rewriting every
+  `Result.Err`.
 
 ## Cancellation Rules
 
@@ -111,18 +149,7 @@ handler must observe the context itself; a handler that blocks forever or ignore
 still keep a worker alive and prevent `results` from closing.
 
 The producer is also responsible for observing cancellation while sending jobs. The pool does not
-own or close `jobs`, so it cannot force a producer to stop:
-
-```go
-for _, job := range submittedJobs {
-	select {
-	case jobs <- job:
-	case <-ctx.Done():
-		return
-	}
-}
-close(jobs)
-```
+own or close `jobs`, so it cannot force a producer to stop.
 
 If a producer ignores cancellation and remains blocked on `jobs <- job`, that producer can leak.
 This remains caller responsibility.
