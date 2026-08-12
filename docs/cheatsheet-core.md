@@ -2,6 +2,379 @@
 
 Translations: [Russian](cheatsheet-core.ru.md) · [Ukrainian](cheatsheet-core.ua.md).
 
+## Defer
+
+`defer` registers a function call to run before the current function returns. Its main use is local
+cleanup: closing files, unlocking mutexes, stopping timers, and calling cancel functions.
+
+### Basic behavior and LIFO
+
+Deferred calls run on function exit, including an early `return`. Multiple calls run in reverse
+registration order:
+
+```go
+func process() {
+	defer fmt.Println("release A")
+	defer fmt.Println("release B")
+	defer fmt.Println("release C")
+}
+// release C, release B, release A
+```
+
+The last registered cleanup runs first. This matches nested resource ownership: release an inner
+resource before the outer resource.
+
+### Argument evaluation versus closures
+
+Arguments to a deferred call are evaluated when the `defer` statement runs:
+
+```go
+x := 10
+defer fmt.Println(x)
+x = 20 // prints 10
+```
+
+A closure reads the variable when the deferred function runs:
+
+```go
+x := 10
+defer func() { fmt.Println(x) }()
+x = 20 // prints 20
+```
+
+### Cleanup after successful acquire
+
+Register cleanup immediately after successfully acquiring the resource:
+
+```go
+file, err := os.Open(name)
+if err != nil {
+	return err
+}
+defer file.Close()
+```
+
+Do not register cleanup before checking the acquire error: the resource may be nil, invalid, or not
+safe to close. Registering each cleanup after its acquire gives the correct reverse release order.
+
+### Named return values
+
+A deferred closure can change a named result before the function actually returns:
+
+```go
+func calculate() (result int) {
+	defer func() { result++ }()
+	return 10 // returns 11
+}
+```
+
+Changing a local variable does not change an already prepared unnamed return value. Use deferred
+result mutation sparingly; cleanup is the natural use of `defer`.
+
+### Panic and loops
+
+During ordinary panic unwinding, deferred calls run. `defer` does not recover the panic; `recover` is
+separate. `os.Exit` terminates the process without running deferred calls.
+
+`defer` inside a long loop keeps every resource until the surrounding function returns. For many
+files or connections, put one iteration in a helper function so its defer runs at the end of that
+iteration. Some cleanup methods return errors, so decide explicitly how those errors interact with
+the main operation error.
+
+### Review questions
+
+1. When does a deferred call run?
+2. In what order do multiple deferred calls run?
+3. When are deferred-call arguments evaluated?
+4. How does a deferred closure differ from a deferred call with an argument?
+5. Why should cleanup be registered immediately after a successful acquire?
+6. How can `defer` change a named return value?
+7. Why can defer inside a long loop hold too many resources?
+8. Do deferred calls run during ordinary panic unwinding?
+
+### Related examples
+
+Executable examples are in:
+
+```text
+03-defer-errors-context/defer/defer_examples_test.go
+```
+
+```bash
+go test ./03-defer-errors-context/defer
+```
+
+## Errors
+
+Go returns errors explicitly as values. A useful error design preserves both a readable operation
+context and the underlying cause that callers may inspect.
+
+### Return and wrap errors
+
+Check errors at the boundary where a function can decide what to do:
+
+```go
+value, err := operation()
+if err != nil {
+	return err
+}
+```
+
+Use `%w` when adding context while preserving the cause:
+
+```go
+return fmt.Errorf("load config %q: %w", name, err)
+```
+
+Use `%v` when you intentionally want only formatted text. An error formatted with `%v` is not
+available to `errors.Is` or `errors.As` as a wrapped cause.
+
+### Sentinel errors and `errors.Is`
+
+A sentinel error is a stable package-level value representing a recognizable cause:
+
+```go
+var ErrNotFound = errors.New("resource not found")
+
+func load(name string) error {
+	return fmt.Errorf("load %s: %w", name, ErrNotFound)
+}
+
+if errors.Is(err, ErrNotFound) {
+	// handle the not-found policy
+}
+```
+
+`errors.Is` searches the error chain or tree. Do not compare errors created independently by
+`errors.New` just because their messages are equal. Direct `==` comparison is appropriate only when
+comparing against a known comparable sentinel and when chain traversal is not needed.
+
+### Typed errors and `errors.AsType`
+
+A typed error carries structured information in addition to its message:
+
+```go
+type FieldError struct {
+	Field string
+	Cause error
+}
+
+func (e *FieldError) Error() string {
+	return fmt.Sprintf("field %q: %v", e.Field, e.Cause)
+}
+
+func (e *FieldError) Unwrap() error { return e.Cause }
+```
+
+In Go 1.26 and later, prefer `errors.AsType` for most typed-error inspection:
+
+```go
+fieldErr, ok := errors.AsType[*FieldError](err)
+if ok {
+	fmt.Println(fieldErr.Field)
+}
+```
+
+`AsType[E]` returns the first matching error of type `E` and a boolean. If there is no match, it
+returns the zero value of `E` and `false`.
+
+The older `errors.As` form writes into a target variable:
+
+```go
+var fieldErr *FieldError
+if errors.As(err, &fieldErr) {
+	fmt.Println(fieldErr.Field)
+}
+```
+
+The target is `&fieldErr`, whose type is `**FieldError`: `errors.As` needs the address of the variable
+that it will fill. `errors.AsType` returns the typed value directly.
+
+### Unwrap and typed context
+
+An error type should implement `Unwrap` when it adds context around another cause:
+
+```go
+type JobError struct {
+	JobID int
+	Op    string
+	Cause error
+}
+
+func (e *JobError) Error() string {
+	return fmt.Sprintf("job %d %s: %v", e.JobID, e.Op, e.Cause)
+}
+
+func (e *JobError) Unwrap() error { return e.Cause }
+```
+
+Without `Unwrap`, the outer type can still be found by `AsType`, but the underlying cause is hidden
+from `errors.Is` and further inspection.
+
+### Error trees and `errors.Join`
+
+`errors.Join` represents several causes in one error tree:
+
+```go
+err := errors.Join(
+	fmt.Errorf("read: %w", ErrPermission),
+	fmt.Errorf("lookup: %w", ErrNotFound),
+)
+
+errors.Is(err, ErrPermission) // true
+errors.Is(err, ErrNotFound)   // true
+```
+
+`errors.Is`, `errors.As`, and `errors.AsType` inspect the tree depth-first and return the first
+matching result. If the application needs all typed failures, collect them explicitly; one
+`AsType` call returns only one match.
+
+### Error-policy boundaries
+
+Keep these decisions separate:
+
+- low-level code adds operation context and preserves the cause;
+- the caller decides whether to retry, ignore, log, or return the error;
+- sentinel errors describe stable categories, not every possible message;
+- typed errors carry data needed by callers;
+- `context.Canceled` and `context.DeadlineExceeded` describe cancellation, not ordinary job failure.
+
+Avoid logging the same error at every layer. Add context where the error crosses a meaningful
+operation boundary, then let the owner of the policy handle it.
+
+### Review questions
+
+1. What does `%w` preserve that `%v` does not?
+2. When should a caller use `errors.Is`?
+3. When should a caller use `errors.AsType`?
+4. Why does `errors.As` receive `&fieldErr` when `fieldErr` has type `*FieldError`?
+5. Why should a typed contextual error implement `Unwrap`?
+6. What is the difference between an error chain and an error tree?
+7. What does `errors.Join` change about `Is` and `AsType` inspection?
+8. Why is equal text not enough to identify an error?
+
+### Related lab
+
+See [`03-defer-errors-context/errors`](../03-defer-errors-context/errors) for typed errors,
+sentinel errors, wrapping, `errors.Is`, `errors.As`, `errors.AsType`, and `errors.Join` tests.
+
+```bash
+go test ./03-defer-errors-context/errors
+```
+
+## Context
+
+`context.Context` propagates cancellation, deadlines, and request-scoped values across API
+boundaries. It does not forcibly interrupt arbitrary code: functions must observe the context and
+cooperate.
+
+### Creating and canceling contexts
+
+The caller usually creates the root context and owns the cancel function:
+
+```go
+ctx, cancel := context.WithCancel(parent)
+defer cancel()
+```
+
+`context.Background()` is a suitable root context. `context.TODO()` marks code where the correct
+parent has not been decided yet. A child context inherits cancellation from its parent:
+
+```text
+parent -> child -> grandchild
+```
+
+Canceling a child does not cancel its parent. Canceling a parent cancels all descendants. Calling a
+cancel function more than once is safe.
+
+### Observing cancellation
+
+Cancellation is signaled by closing `Done()`; no value is sent through the channel:
+
+```go
+select {
+case <-ctx.Done():
+	return ctx.Err()
+case value := <-input:
+	return process(value)
+}
+```
+
+After cancellation, `ctx.Err()` returns either `context.Canceled` or
+`context.DeadlineExceeded`. Check these with `errors.Is` when the error may have additional context.
+
+### Deadlines and timeouts
+
+```go
+ctx, cancel := context.WithTimeout(parent, 2*time.Second)
+defer cancel()
+```
+
+`WithDeadline` uses an absolute time; `WithTimeout` derives a deadline relative to now. A child
+cannot extend its parent's earlier deadline.
+
+The caller normally chooses the operation timeout. A function may create a shorter child timeout for
+an internal bound, but it should accept the caller's context and preserve its cancellation semantics.
+
+### Context-aware APIs
+
+Put context first in a function signature and pass it to operations that support cancellation:
+
+```go
+func Run(ctx context.Context, input Input) (Output, error) {
+	if err := ctx.Err(); err != nil {
+		return Output{}, err
+	}
+	return doWork(ctx, input)
+}
+```
+
+Do not store context in a long-lived struct, and do not pass a nil context. If an API requires a
+context, use an explicit context parameter rather than silently substituting `Background`.
+
+### Context values
+
+`context.WithValue` is for request-scoped metadata that crosses API boundaries:
+
+```go
+type requestIDKey struct{}
+
+ctx = context.WithValue(ctx, requestIDKey{}, "req-42")
+```
+
+Use an unexported key type. Do not use context values for mandatory function arguments, optional
+configuration, or mutable application state.
+
+### Common lifecycle mistakes
+
+- creating a child context and forgetting its `cancel` function;
+- checking cancellation only before a long blocking operation;
+- assuming context can kill a handler that ignores `Done()`;
+- canceling a child and expecting its parent to stop;
+- using `time.Sleep` instead of waiting on `ctx.Done()`;
+- letting a producer or consumer ignore the same context used by the operation.
+
+### Review questions
+
+1. Who normally creates and cancels a context?
+2. What happens to `Done()` after cancellation?
+3. What is the difference between `context.Canceled` and `context.DeadlineExceeded`?
+4. Does canceling a child cancel its parent?
+5. Does canceling a parent cancel its descendants?
+6. Why should context usually be the first function argument?
+7. Why should a function usually call `defer cancel()` for its child context?
+8. What belongs in context values, and what does not?
+9. Can context forcibly stop a handler that ignores it?
+
+### Related lab
+
+See [`03-defer-errors-context/context`](../03-defer-errors-context/context) for cancellable steps,
+deadline-aware waiting, parent-child propagation, and focused tests.
+
+```bash
+go test ./03-defer-errors-context/context
+```
+
 ## Slices
 
 ### Definition
