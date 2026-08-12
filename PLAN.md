@@ -147,7 +147,7 @@ Concurrency focus:
 
 Primary docs:
 
-- `03-errors-defer-context/README.md` (planned);
+- [`03-defer-errors-context/README.md`](03-defer-errors-context/README.md);
 - [`08-worker-pool-v2/README.md`](08-worker-pool-v2/README.md)
 - [`docs/cheatsheet-concurrency.md`](docs/cheatsheet-concurrency.md)
 

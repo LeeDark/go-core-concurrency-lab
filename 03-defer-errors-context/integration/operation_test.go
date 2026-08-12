@@ -183,18 +183,37 @@ func TestRunOperationJoinsStepAndCloseErrors(t *testing.T) {
 	if !errors.Is(err, closeErr) {
 		t.Fatalf("joined error = %v, missing close error", err)
 	}
+	operationErr, ok := errors.AsType[*errorslab.OperationError](err)
+	if !ok || operationErr.OperationID != 5 {
+		t.Fatalf("operation error = %#v, want operation ID 5", operationErr)
+	}
+	stepFailure, ok := errors.AsType[*contextlab.StepError](err)
+	if !ok || stepFailure.Index != 0 {
+		t.Fatalf("step error = %#v, want step index 0", stepFailure)
+	}
+	if resource.closeCalls != 1 {
+		t.Fatalf("Close calls = %d, want 1", resource.closeCalls)
+	}
 }
 
-func TestRunOperationRejectsInvalidInputsWithoutClosingResource(t *testing.T) {
+func TestRunOperationClosesAcceptedResourceWhenContextIsNil(t *testing.T) {
 	resource := &fakeResource{}
 
 	if err := RunOperation(nil, 6, resource); !errors.Is(err, ErrNilContext) {
 		t.Fatalf("nil context error = %v, want ErrNilContext", err)
 	}
-	if resource.closeCalls != 0 {
-		t.Fatalf("Close calls after nil context = %d, want 0", resource.closeCalls)
+	if resource.closeCalls != 1 {
+		t.Fatalf("Close calls after nil context = %d, want 1", resource.closeCalls)
 	}
+}
+
+func TestRunOperationRejectsNilResources(t *testing.T) {
 	if err := RunOperation(context.Background(), 7, nil); !errors.Is(err, ErrNilResource) {
 		t.Fatalf("nil resource error = %v, want ErrNilResource", err)
+	}
+
+	var typedNil *fakeResource
+	if err := RunOperation(context.Background(), 8, typedNil); !errors.Is(err, ErrNilResource) {
+		t.Fatalf("typed nil resource error = %v, want ErrNilResource", err)
 	}
 }

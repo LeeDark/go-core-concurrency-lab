@@ -2,14 +2,12 @@
 
 ## Status
 
-Phase 4 Track A is in progress. The first three stages are implemented:
+Phase 4 Track A is implemented:
 
 1. defer — core cheatsheet section and executable examples;
 2. errors — sentinel errors, typed errors, wrapping, inspection, and tests;
-3. context — cancellable workflow helpers, deadline-aware waiting, and tests.
-
-The final integrated core lab is implemented in `integration/` and combines cleanup, error
-propagation, and cancellation.
+3. context — cancellable workflow helpers, deadline-aware waiting, and tests;
+4. integration — one operation lifecycle that combines cleanup, error propagation, and cancellation.
 
 ## Goal
 
@@ -91,14 +89,22 @@ type JobError struct {
 	Cause error
 }
 
+type OperationError struct {
+	OperationID int
+	Op          string
+	Cause       error
+}
+
 func NotFound(resource string) error
 func InvalidField(field string, cause error) error
 func FailedJob(jobID int, operation string, cause error) error
+func FailedOperation(operationID int, operation string, cause error) error
 func FieldErrorFrom(err error) (*FieldError, bool)
 func JobErrorFrom(err error) (*JobError, bool)
+func OperationErrorFrom(err error) (*OperationError, bool)
 ```
 
-Both typed errors implement `Unwrap`, so callers can inspect structured fields and still use
+All three typed errors implement `Unwrap`, so callers can inspect structured fields and still use
 `errors.Is` or `errors.AsType` for the underlying cause.
 
 ```bash
@@ -172,8 +178,9 @@ func RunOperation(
 ) (err error)
 ```
 
-The caller creates the context and resource. After accepting a non-nil resource, `RunOperation`
-closes it exactly once on every return path.
+The caller creates the context and resource. `RunOperation` rejects nil and typed-nil resources;
+after accepting a usable resource, it closes it exactly once on every return path, including an
+invalid nil context.
 
 The operation preserves structured causes:
 
@@ -184,7 +191,7 @@ The operation preserves structured causes:
 
 The integration tests use a controlled fake resource rather than files, sockets, or databases. They
 cover success, step failure, cancellation before and during a step, deadline expiration, cleanup
-errors, joined errors, and invalid input.
+errors, joined errors, and invalid input, including a typed-nil resource.
 
 Run the focused tests with:
 

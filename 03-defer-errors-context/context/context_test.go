@@ -189,3 +189,18 @@ func TestParentCancellationPropagatesToChild(t *testing.T) {
 		t.Fatalf("child error = %v, want context.Canceled", child.Err())
 	}
 }
+
+func TestChildCancellationDoesNotCancelParent(t *testing.T) {
+	parent := context.Background()
+	child, cancelChild := context.WithCancel(parent)
+	defer cancelChild()
+
+	cancelChild()
+
+	if !errors.Is(child.Err(), context.Canceled) {
+		t.Fatalf("child error = %v, want context.Canceled", child.Err())
+	}
+	if parent.Err() != nil {
+		t.Fatalf("parent error = %v, want nil", parent.Err())
+	}
+}

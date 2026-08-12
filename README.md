@@ -74,6 +74,7 @@ is Phase 4, Defer, errors, context, and Worker Pool v2. See
 ## Repository Layout
 
 ```text
+03-defer-errors-context/    Defer, errors, context, and integrated lifecycle lab.
 05-slices-maps/             Slice/map notes and focused collection examples.
 07-worker-pool-v1/          Minimal worker pool with channels and WaitGroup.
 08-worker-pool-v2/          Planned lifecycle-focused worker pool notes.
@@ -84,6 +85,12 @@ PLAN.md                     Roadmap for core topics and concurrency labs.
 ```
 
 ## Current Labs
+
+### Defer, Errors, And Context
+
+[`03-defer-errors-context`](03-defer-errors-context/README.md) is the completed core part of
+Phase 4. It covers local cleanup with `defer`, error wrapping and inspection, cooperative context
+cancellation, and one integrated operation lifecycle.
 
 ### Slices and Maps
 
