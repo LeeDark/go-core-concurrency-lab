@@ -49,7 +49,12 @@ func Run(
 						return
 					}
 
-					results <- handle(ctx, job)
+					result := handle(ctx, job)
+					select {
+					case results <- result:
+					case <-ctx.Done():
+						return
+					}
 				case <-ctx.Done():
 					return
 				}
