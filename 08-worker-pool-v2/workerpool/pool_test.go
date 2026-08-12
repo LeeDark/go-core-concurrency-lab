@@ -284,6 +284,39 @@ func TestRunSupportsWholeOperationTimeout(t *testing.T) {
 	}
 }
 
+func TestRunSupportsPerJobTimeout(t *testing.T) {
+	jobs := make(chan Job, 1)
+	jobs <- Job{ID: 1}
+	close(jobs)
+
+	handle := WithJobTimeout(20*time.Millisecond, func(ctx context.Context, job Job) Result {
+		<-ctx.Done()
+		return Result{JobID: job.ID, Err: ctx.Err()}
+	})
+
+	results := Run(context.Background(), 1, jobs, handle)
+	result, ok := <-results
+	if !ok {
+		t.Fatal("results closed before per-job timeout result")
+	}
+
+	if result.JobID != 1 {
+		t.Fatalf("result job ID = %d, want 1", result.JobID)
+	}
+	if !errors.Is(result.Err, context.DeadlineExceeded) {
+		t.Fatalf("result error = %v, want %v", result.Err, context.DeadlineExceeded)
+	}
+
+	select {
+	case _, ok := <-results:
+		if ok {
+			t.Fatal("received more than one result")
+		}
+	case <-time.After(resultWaitTimeout):
+		t.Fatal("results did not close after per-job timeout")
+	}
+}
+
 func TestRunCannotStopHandlerThatIgnoresContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

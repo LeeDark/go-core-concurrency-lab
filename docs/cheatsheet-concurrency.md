@@ -398,6 +398,95 @@ go test ./07-worker-pool-v1/workerpool
 go test -race ./07-worker-pool-v1/workerpool
 ```
 
+## Worker Pool v2: lifecycle control
+
+V2 keeps the fixed worker pool but adds cooperative cancellation through `context.Context`:
+
+```go
+func Run(
+	ctx context.Context,
+	workerCount int,
+	jobs <-chan Job,
+	handle func(context.Context, Job) Result,
+) <-chan Result
+```
+
+The caller creates and cancels `ctx`, sends to and closes `jobs`, and receives from `results`. The
+pool never closes or drains caller-owned `jobs`; it sends to and closes `results`. A non-positive
+worker count is normalized to one, and result order is not guaranteed.
+
+Workers must observe cancellation both while receiving jobs and while publishing results:
+
+```go
+for {
+	select {
+	case job, ok := <-jobs:
+		if !ok {
+			return
+		}
+		result := handle(ctx, job)
+		select {
+		case results <- result:
+		case <-ctx.Done():
+			return
+		}
+	case <-ctx.Done():
+		return
+	}
+}
+```
+
+Cancellation is cooperative. A handler must observe `ctx.Done()` or use context-aware operations;
+the pool cannot forcibly interrupt code that ignores the context. Likewise, a producer must select
+on `ctx.Done()` while sending and close `jobs` when it owns that lifecycle:
+
+```go
+for _, job := range submittedJobs {
+	select {
+	case jobs <- job:
+	case <-ctx.Done():
+		return
+	}
+}
+close(jobs)
+```
+
+After cancellation, queued jobs may remain unprocessed. If result sending and cancellation become
+ready simultaneously, the result may be sent or discarded. This is why callers should treat
+cancellation as operation termination, not expect a final result for every queued job.
+
+The pool still uses the v1 closing rule: a `sync.WaitGroup` tracks worker exit, and a coordinator
+closes `results` only after `wg.Wait()` returns. Cancellation never closes `results` directly.
+
+For a whole-operation timeout, the caller derives the context:
+
+```go
+ctx, cancel := context.WithTimeout(parent, timeout)
+defer cancel()
+results := workerpool.Run(ctx, workers, jobs, handle)
+```
+
+Job-level failures remain in `Result.Err`; there is no separate errors channel. A whole-operation
+timeout is observable as `context.DeadlineExceeded` through the handler context. A per-job timeout
+uses a child-context wrapper and does not cancel the whole pool:
+
+```go
+handle := workerpool.WithJobTimeout(jobTimeout, func(jobCtx context.Context, job Job) Result {
+	return doJob(jobCtx, job)
+})
+results := workerpool.Run(ctx, workers, jobs, handle)
+```
+
+The wrapped handler must observe `jobCtx.Done()`. Retries, metrics, tracing, and persistent queues
+are outside this lab.
+
+Focused validation:
+
+```bash
+go test ./08-worker-pool-v2/workerpool
+go test -race ./08-worker-pool-v2/workerpool
+```
+
 # Race Detector / Memory Model / Scheduler
 
 ## Data race

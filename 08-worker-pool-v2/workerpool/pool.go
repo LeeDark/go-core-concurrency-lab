@@ -3,6 +3,7 @@ package workerpool
 import (
 	"context"
 	"sync"
+	"time"
 )
 
 // Job is one unit of work accepted by the pool.
@@ -16,6 +17,21 @@ type Result struct {
 	JobID int
 	Value string
 	Err   error
+}
+
+// WithJobTimeout wraps a handler with a timeout for each individual job. The
+// parent pool context is still honored, and the wrapper does not change channel
+// ownership or the pool's whole-operation cancellation policy.
+func WithJobTimeout(
+	timeout time.Duration,
+	handle func(context.Context, Job) Result,
+) func(context.Context, Job) Result {
+	return func(ctx context.Context, job Job) Result {
+		jobCtx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+
+		return handle(jobCtx, job)
+	}
 }
 
 // Run starts a fixed number of workers and returns a receive-only results channel.
@@ -50,6 +66,9 @@ func Run(
 					}
 
 					result := handle(ctx, job)
+					if ctx.Err() != nil {
+						return
+					}
 					select {
 					case results <- result:
 					case <-ctx.Done():
