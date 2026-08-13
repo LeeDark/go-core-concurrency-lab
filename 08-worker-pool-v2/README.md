@@ -58,7 +58,7 @@ Worker Pool v2 does not need to include:
 
 Those belong to later labs.
 
-## Suggested Structure
+## Structure
 
 ```text
 08-worker-pool-v2/
@@ -72,7 +72,7 @@ If v1 already has a clean `workerpool` package, copy the idea and evolve the API
 
 ## API Contract
 
-Use this shape for the first v2 implementation:
+The v2 API is:
 
 ```go
 type Job struct {
@@ -134,7 +134,7 @@ forever on a send.
 
 ### Error Policy
 
-Keep the first v2 pass simple:
+Keep the v2 policy simple:
 
 - each job received by a worker is passed to the handler once;
 - a job-level failure is stored in `Result.Err`;
@@ -181,6 +181,9 @@ case job, ok := <-jobs:
 		return
 	}
 	result := handle(ctx, job)
+	if ctx.Err() != nil {
+		return
+	}
 case <-ctx.Done():
 	return
 }
@@ -199,7 +202,7 @@ Result publication is also cancellation-aware:
 
 ```go
 select {
-case results <- result:
+	case results <- result:
 case <-ctx.Done():
 	return
 }
@@ -228,8 +231,9 @@ handle := workerpool.WithJobTimeout(jobTimeout, func(jobCtx context.Context, job
 results := workerpool.Run(ctx, workers, jobs, handle)
 ```
 
-The handler must observe the per-job context for the timeout to stop work cooperatively. A job-level
-timeout is returned through `Result.Err`; it does not cancel the whole pool.
+The handler must observe the per-job context for the timeout to stop work cooperatively. If the
+handler returns without its own error after the child context expires, `WithJobTimeout` records the
+child context error in `Result.Err`. A job-level timeout does not cancel the whole pool.
 
 ## Leak Risks To Understand
 
@@ -241,13 +245,17 @@ Common leak cases:
 - consumer stops reading before workers finish;
 - handler blocks and ignores context.
 
-V2 should explain which of these are handled by the design and which remain caller responsibility:
+The design handles some of these cases, while others remain caller responsibility:
 
 - the pool handles cancellation while receiving jobs;
 - the pool handles cancellation-aware result sends;
 - the producer must stop sending and close its `jobs` channel according to its own lifecycle;
 - the consumer must cancel when it stops reading;
 - the handler must cooperate with context if it needs to stop promptly.
+
+The pool cannot stop a producer that uses a plain blocking send without observing `ctx.Done()`.
+That producer remains blocked until its caller provides a receiver or otherwise releases its
+lifecycle.
 
 ## Channel Ownership Rules
 

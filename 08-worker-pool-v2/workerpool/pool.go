@@ -30,7 +30,11 @@ func WithJobTimeout(
 		jobCtx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()
 
-		return handle(jobCtx, job)
+		result := handle(jobCtx, job)
+		if result.Err == nil && jobCtx.Err() != nil {
+			result.Err = jobCtx.Err()
+		}
+		return result
 	}
 }
 

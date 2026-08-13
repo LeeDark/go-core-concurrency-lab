@@ -10,6 +10,8 @@ import (
 
 const resultWaitTimeout = time.Second
 
+// Basic contract and result policy.
+
 func TestRunProcessesJobsAndClosesResults(t *testing.T) {
 	jobs := make(chan Job)
 	results := Run(context.Background(), 2, jobs, func(_ context.Context, job Job) Result {
@@ -80,6 +82,8 @@ func TestRunClosesResultsForClosedJobs(t *testing.T) {
 		t.Fatal("results channel did not close for a closed jobs channel")
 	}
 }
+
+// Cancellation and result publication.
 
 func TestRunStopsWorkersWaitingForJobsAfterCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -247,6 +251,8 @@ func TestRunClosesResultsOnlyAfterAllWorkersExit(t *testing.T) {
 	}
 }
 
+// Whole-operation and per-job timeouts.
+
 func TestRunSupportsWholeOperationTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
 	defer cancel()
@@ -285,37 +291,35 @@ func TestRunSupportsWholeOperationTimeout(t *testing.T) {
 }
 
 func TestRunSupportsPerJobTimeout(t *testing.T) {
-	jobs := make(chan Job, 1)
+	jobs := make(chan Job, 2)
 	jobs <- Job{ID: 1}
+	jobs <- Job{ID: 2}
 	close(jobs)
 
 	handle := WithJobTimeout(20*time.Millisecond, func(ctx context.Context, job Job) Result {
-		<-ctx.Done()
+		if job.ID == 1 {
+			<-ctx.Done()
+			return Result{JobID: job.ID}
+		}
+
 		return Result{JobID: job.ID, Err: ctx.Err()}
 	})
 
 	results := Run(context.Background(), 1, jobs, handle)
-	result, ok := <-results
-	if !ok {
-		t.Fatal("results closed before per-job timeout result")
+	received := make(map[int]Result)
+	for result := range results {
+		received[result.JobID] = result
 	}
 
-	if result.JobID != 1 {
-		t.Fatalf("result job ID = %d, want 1", result.JobID)
+	if !errors.Is(received[1].Err, context.DeadlineExceeded) {
+		t.Fatalf("timed-out result error = %v, want %v", received[1].Err, context.DeadlineExceeded)
 	}
-	if !errors.Is(result.Err, context.DeadlineExceeded) {
-		t.Fatalf("result error = %v, want %v", result.Err, context.DeadlineExceeded)
-	}
-
-	select {
-	case _, ok := <-results:
-		if ok {
-			t.Fatal("received more than one result")
-		}
-	case <-time.After(resultWaitTimeout):
-		t.Fatal("results did not close after per-job timeout")
+	if received[2].Err != nil {
+		t.Fatalf("second result error = %v, want nil", received[2].Err)
 	}
 }
+
+// Leak boundaries.
 
 func TestRunCannotStopHandlerThatIgnoresContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -365,6 +369,8 @@ func TestRunCannotStopHandlerThatIgnoresContext(t *testing.T) {
 		}
 	}
 }
+
+// Policy and ownership boundaries.
 
 func TestRunNormalizesNonPositiveWorkerCount(t *testing.T) {
 	jobs := make(chan Job, 1)
@@ -430,11 +436,56 @@ func TestProducerStopsSubmittingAfterCancellation(t *testing.T) {
 	}
 }
 
+func TestProducerIgnoringCancellationRemainsBlocked(t *testing.T) {
+	jobs := make(chan Job)
+	producerStarted := make(chan struct{})
+	producerDone := make(chan struct{})
+
+	go func() {
+		defer close(producerDone)
+		close(producerStarted)
+		jobs <- Job{ID: 1}
+		close(jobs)
+	}()
+
+	select {
+	case <-producerStarted:
+	case <-time.After(resultWaitTimeout):
+		t.Fatal("producer did not start before timeout")
+	}
+
+	select {
+	case <-producerDone:
+		t.Fatal("producer unexpectedly completed without a receiver")
+	case <-time.After(10 * time.Millisecond):
+	}
+
+	// The producer has no context-aware escape hatch. A caller that owns the
+	// lifecycle must arrange a receiver or otherwise release the producer.
+	select {
+	case job := <-jobs:
+		if job.ID != 1 {
+			t.Fatalf("received job ID = %d, want 1", job.ID)
+		}
+	case <-time.After(resultWaitTimeout):
+		t.Fatal("controlled receiver did not release the blocked producer")
+	}
+
+	select {
+	case <-producerDone:
+	case <-time.After(resultWaitTimeout):
+		t.Fatal("producer did not finish after its send was released")
+	}
+}
+
+// Bounded concurrency.
+
 func TestRunLimitsConcurrentHandlers(t *testing.T) {
 	const workerCount = 3
+	const jobCount = 10
 
-	jobs := make(chan Job, workerCount)
-	for i := 1; i <= workerCount; i++ {
+	jobs := make(chan Job, jobCount)
+	for i := 1; i <= jobCount; i++ {
 		jobs <- Job{ID: i}
 	}
 	close(jobs)
@@ -477,7 +528,7 @@ func TestRunLimitsConcurrentHandlers(t *testing.T) {
 	for range results {
 		count++
 	}
-	if count != workerCount {
-		t.Fatalf("received %d results, want %d", count, workerCount)
+	if count != jobCount {
+		t.Fatalf("received %d results, want %d", count, jobCount)
 	}
 }

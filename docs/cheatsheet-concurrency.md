@@ -425,6 +425,9 @@ for {
 			return
 		}
 		result := handle(ctx, job)
+		if ctx.Err() != nil {
+			return
+		}
 		select {
 		case results <- result:
 		case <-ctx.Done():
@@ -477,8 +480,10 @@ handle := workerpool.WithJobTimeout(jobTimeout, func(jobCtx context.Context, job
 results := workerpool.Run(ctx, workers, jobs, handle)
 ```
 
-The wrapped handler must observe `jobCtx.Done()`. Retries, metrics, tracing, and persistent queues
-are outside this lab.
+The wrapped handler must observe `jobCtx.Done()`. If it returns without its own error after the
+child context expires, the wrapper records the context error in `Result.Err`. The per-job timeout
+does not cancel the whole pool. Retries, metrics, tracing, and persistent queues are outside this
+lab.
 
 Focused validation:
 
