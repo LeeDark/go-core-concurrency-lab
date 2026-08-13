@@ -55,8 +55,9 @@ its dedicated phase remains lower priority. Project structure is intentionally s
 Phase 7, despite being the most familiar topic and appearing first in the sequence.
 
 The current priorities group that path into phases. Phase 1, Slices, is finished and closed. Phase
-2, Worker Pool v1, is finished and closed. Phase 3, Maps, is finished and closed. The current work
-is Phase 4, Defer, errors, context, and Worker Pool v2. See
+2, Worker Pool v1, is finished and closed. Phase 3, Maps, is finished and closed. Phase 4, Defer,
+errors, context, and Worker Pool v2, is finished and closed. The current work is Phase 5, Race
+detector, memory model, and runtime. See
 [`PLAN.md`](PLAN.md) for the full roadmap.
 
 | Phase | Topic                                           | Status                   |
@@ -64,8 +65,8 @@ is Phase 4, Defer, errors, context, and Worker Pool v2. See
 | 1     | Slices                                          | Finished, closed         |
 | 2     | Worker Pool v1                                  | Finished, closed         |
 | 3     | Maps                                            | Finished, closed         |
-| 4     | Defer, errors, context, and Worker Pool v2      | Current                  |
-| 5     | Race detector, memory model, and runtime        | Planned                  |
+| 4     | Defer, errors, context, and Worker Pool v2      | Finished, closed         |
+| 5     | Race detector, memory model, and runtime        | Current                  |
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |
 | 7     | Structure and Pipeline v2                       | Planned                  |
 | 8     | Generics, tooling, workspaces, and shared state | Planned                  |
@@ -77,7 +78,7 @@ is Phase 4, Defer, errors, context, and Worker Pool v2. See
 03-defer-errors-context/    Defer, errors, context, and integrated lifecycle lab.
 05-slices-maps/             Slice/map notes and focused collection examples.
 07-worker-pool-v1/          Minimal worker pool with channels and WaitGroup.
-08-worker-pool-v2/          Planned lifecycle-focused worker pool notes.
+08-worker-pool-v2/          Lifecycle-focused worker pool with cancellation and timeouts.
 coding/                     Coding-practice exercises.
 docs/                       Core and concurrency cheatsheets.
 docs/ai/project-context.md  AI-assistant project context and learning boundaries.
@@ -126,19 +127,25 @@ error policy. Those belong to Worker Pool v2.
 
 ### Worker Pool v2
 
-[`08-worker-pool-v2`](08-worker-pool-v2/README.md) extends the v1 mental model with lifecycle
-control:
+Finished and closed. [`08-worker-pool-v2`](08-worker-pool-v2/README.md) extends the v1 mental
+model with lifecycle control:
 
 - `context.Context`;
 - cancellation while waiting for jobs;
 - cancellation while sending results;
-- timeout policy;
+- whole-operation and per-job timeout policy;
 - error policy;
 - goroutine leak reasoning;
 - graceful stop semantics.
 
-Phase 4 also introduces basic data-race reasoning. The dedicated race-detector, memory-model, and
-runtime study remains in Phase 5.
+It also includes focused lifecycle tests and targeted race-detector validation.
+
+### Race Detector, Memory Model, And Runtime
+
+Phase 5 is the current lab. It studies race detection and happens-before with small safe and unsafe
+examples, then connects goroutine lifecycle to the scheduler, G-M-P, `GOMAXPROCS`, and CPU-bound
+versus I/O-bound work. It uses Worker Pool v2 as a case study rather than introducing Worker Pool
+v3.
 
 ## Notes And Cheatsheets
 
@@ -160,6 +167,8 @@ go test ./05-slices-maps/maps-lab
 go test -race ./05-slices-maps/maps-lab
 go test ./07-worker-pool-v1/workerpool
 go test -race ./07-worker-pool-v1/workerpool
+go test ./08-worker-pool-v2/workerpool
+go test -race ./08-worker-pool-v2/workerpool
 ```
 
 Avoid broad test runs such as:

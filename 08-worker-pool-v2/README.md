@@ -1,5 +1,9 @@
 # Worker Pool v2
 
+## Status
+
+Implemented and verified with focused tests, including the race detector.
+
 ## Goal
 
 Extend Worker Pool v1 with production-style lifecycle control:
@@ -30,17 +34,17 @@ Do not solve v2 by rewriting the whole lab from scratch. Add lifecycle control o
 
 ## V2 Scope
 
-Worker Pool v2 includes:
+Worker Pool v2 implements:
 
 - `context.Context`;
 - cancellation while workers are waiting for jobs;
 - cancellation while workers are sending results;
-- timeout for the whole operation;
-- optional timeout per job;
-- explicit error handling policy;
-- goroutine leak reasoning;
-- race detector validation when explicitly requested;
-- graceful stop semantics.
+- whole-operation timeout through a caller-created context;
+- per-job timeout through a handler wrapper;
+- explicit job-level error handling policy;
+- goroutine leak reasoning and lifecycle tests;
+- cancellation-aware graceful stop semantics;
+- race-detector verification for this package.
 
 Worker Pool v2 does not need to include:
 
@@ -54,20 +58,21 @@ Worker Pool v2 does not need to include:
 
 Those belong to later labs.
 
-## Suggested Structure
+## Structure
 
 ```text
 08-worker-pool-v2/
   README.md
   workerpool/
     pool.go
+    pool_test.go
 ```
 
 If v1 already has a clean `workerpool` package, copy the idea and evolve the API here.
 
-## Possible API
+## API Contract
 
-Start with this shape:
+The v2 API is:
 
 ```go
 type Job struct {
@@ -89,13 +94,54 @@ func Run(
 ) <-chan Result
 ```
 
-Why this API:
+The ownership contract is:
 
-- caller controls cancellation;
-- workers can stop when `ctx.Done()` is closed;
-- handler receives the same context;
-- pool still owns `results`;
-- caller still owns `jobs`.
+- caller creates and cancels `ctx`;
+- caller sends to and closes `jobs`;
+- pool only receives from `jobs` and never closes or drains it;
+- pool sends to and closes `results`;
+- caller only receives from `results` and never closes it;
+- workers receive the same `ctx` through the handler.
+
+Additional rules:
+
+- `workerCount <= 0` is normalized to one worker, matching Worker Pool v1;
+- result order is not guaranteed;
+- cancellation may stop workers from receiving new jobs;
+- jobs already queued may remain unprocessed after cancellation;
+- a handler that is already running stops only if it observes the context;
+- `results` is closed only after every worker has exited;
+- if result sending and cancellation become ready at the same time, that result may be sent or
+  discarded; callers must rely on channel closure and the cancellation contract, not on a final
+  result after cancellation.
+
+The pool does not forcibly stop a handler that ignores the context. The producer must also observe
+the context while sending jobs and close `jobs` when it owns that sending lifecycle:
+
+```go
+for _, job := range submittedJobs {
+	select {
+	case jobs <- job:
+	case <-ctx.Done():
+		return
+	}
+}
+close(jobs)
+```
+
+If the producer ignores cancellation, it remains the producer's responsibility and may block
+forever on a send.
+
+### Error Policy
+
+Keep the v2 policy simple:
+
+- each job received by a worker is passed to the handler once;
+- a job-level failure is stored in `Result.Err`;
+- cancellation may prevent queued jobs from being handled;
+- cancellation may discard a handled result if the worker is blocked publishing it;
+- no separate errors channel is introduced;
+- operation cancellation is represented by the context; it does not rewrite job-level errors.
 
 ## Cancellation Rules
 
@@ -111,18 +157,7 @@ handler must observe the context itself; a handler that blocks forever or ignore
 still keep a worker alive and prevent `results` from closing.
 
 The producer is also responsible for observing cancellation while sending jobs. The pool does not
-own or close `jobs`, so it cannot force a producer to stop:
-
-```go
-for _, job := range submittedJobs {
-	select {
-	case jobs <- job:
-	case <-ctx.Done():
-		return
-	}
-}
-close(jobs)
-```
+own or close `jobs`, so it cannot force a producer to stop.
 
 If a producer ignores cancellation and remains blocked on `jobs <- job`, that producer can leak.
 This remains caller responsibility.
@@ -135,63 +170,46 @@ select:
   or stop when ctx.Done() is closed
 ```
 
-## Implementation Plan
+## Implemented lifecycle mechanics
 
-### Step 1: Add Context To Run
-
-Add `ctx context.Context` to `Run`.
-
-Workers should select between:
-
-- receiving from `jobs`;
-- cancellation from `ctx.Done()`.
-
-### Step 2: Add Context To Handler
-
-Change handler shape:
+Workers select between receiving a job and cancellation:
 
 ```go
-handle func(context.Context, Job) Result
+select {
+case job, ok := <-jobs:
+	if !ok {
+		return
+	}
+	result := handle(ctx, job)
+	if ctx.Err() != nil {
+		return
+	}
+case <-ctx.Done():
+	return
+}
 ```
 
-This lets slow or blocking handlers observe cancellation.
-
-It does not give the pool a way to forcibly interrupt the handler. The handler must check
-`ctx.Done()` or pass the context to operations that support cancellation.
-
-### Step 3: Protect Result Sends
-
-When a worker finishes a job, it should not blindly block forever on:
+The handler receives the same context, so slow or blocking work can observe cancellation:
 
 ```go
-results <- result
+result := handle(ctx, job)
 ```
 
-Use cancellation-aware sending.
+This is cooperative cancellation. It does not forcibly interrupt a handler that blocks or ignores
+`ctx.Done()`.
 
-### Step 4: Close Results Correctly
+Result publication is also cancellation-aware:
 
-Keep the v1 rule:
-
-```text
-wait for all workers
-close(results)
+```go
+select {
+	case results <- result:
+case <-ctx.Done():
+	return
+}
 ```
 
-Cancellation does not change ownership.
-
-The pool still closes `results` only after all worker goroutines exit.
-
-### Step 5: Define Error Policy
-
-Pick one simple policy for v2:
-
-- every job produces a `Result`;
-- `Result.Err` contains job-level failure;
-- context cancellation may stop remaining jobs;
-- the results channel closes when workers exit.
-
-Do not introduce separate `errors` channel yet unless there is a strong reason.
+The coordinator retains the v1 closing rule: a `sync.WaitGroup` waits for every worker, and only
+then does a separate goroutine close `results`. Cancellation never closes `results` directly.
 
 ## Timeout Plan
 
@@ -202,14 +220,20 @@ ctx, cancel := context.WithTimeout(parent, timeout)
 defer cancel()
 ```
 
-Per-job timeout can be added later inside the handler:
+Per-job timeout is implemented as a handler wrapper. It creates a child context for each job,
+preserves cancellation from the pool's parent context, and does not change channel ownership:
 
 ```go
-jobCtx, cancel := context.WithTimeout(ctx, jobTimeout)
-defer cancel()
+handle := workerpool.WithJobTimeout(jobTimeout, func(jobCtx context.Context, job Job) Result {
+	return doJob(jobCtx, job)
+})
+
+results := workerpool.Run(ctx, workers, jobs, handle)
 ```
 
-For the first v2 pass, prefer whole-operation timeout only.
+The handler must observe the per-job context for the timeout to stop work cooperatively. If the
+handler returns without its own error after the child context expires, `WithJobTimeout` records the
+child context error in `Result.Err`. A job-level timeout does not cancel the whole pool.
 
 ## Leak Risks To Understand
 
@@ -221,13 +245,17 @@ Common leak cases:
 - consumer stops reading before workers finish;
 - handler blocks and ignores context.
 
-V2 should explain which of these are handled by the design and which remain caller responsibility:
+The design handles some of these cases, while others remain caller responsibility:
 
 - the pool handles cancellation while receiving jobs;
 - the pool handles cancellation-aware result sends;
 - the producer must stop sending and close its `jobs` channel according to its own lifecycle;
 - the consumer must cancel when it stops reading;
 - the handler must cooperate with context if it needs to stop promptly.
+
+The pool cannot stop a producer that uses a plain blocking send without observing `ctx.Done()`.
+That producer remains blocked until its caller provides a receiver or otherwise releases its
+lifecycle.
 
 ## Channel Ownership Rules
 
@@ -258,6 +286,31 @@ Producer after cancellation:
 - producer stops submitting new jobs after cancellation;
 - producer closes `jobs` if it owns the sending lifecycle;
 - pool does not close or drain caller-owned `jobs` on the producer's behalf.
+
+## Tests
+
+`workerpool/pool_test.go` covers:
+
+- normal processing and result collection;
+- job-level errors in `Result.Err`;
+- closed `jobs` and closure of `results`;
+- cancellation while workers wait for jobs;
+- cancellation delivered to a running handler;
+- cancellation while a worker is blocked sending a result;
+- `results` closing only after all workers exit;
+- whole-operation timeout and `context.DeadlineExceeded`;
+- per-job timeout through `WithJobTimeout`;
+- a handler that ignores context and holds a worker;
+- a producer that stops sending after cancellation;
+- bounded handler concurrency;
+- normalization of non-positive `workerCount`.
+
+Run the focused checks with:
+
+```bash
+go test ./08-worker-pool-v2/workerpool
+go test -race ./08-worker-pool-v2/workerpool
+```
 
 ## Learning Checkpoints
 

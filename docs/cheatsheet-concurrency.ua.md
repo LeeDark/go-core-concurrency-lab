@@ -233,3 +233,98 @@ Cancellation, тайм-аути, graceful shutdown, leak checks і розшир�
 go test ./07-worker-pool-v1/workerpool
 go test -race ./07-worker-pool-v1/workerpool
 ```
+
+## Worker Pool v2: керування життєвим циклом
+
+V2 зберігає фіксований worker pool і додає кооперативне скасування через `context.Context`:
+
+```go
+func Run(
+	ctx context.Context,
+	workerCount int,
+	jobs <-chan Job,
+	handle func(context.Context, Job) Result,
+) <-chan Result
+```
+
+Caller створює та скасовує `ctx`, надсилає jobs і закриває `jobs`, а також читає `results`. Pool
+ніколи не закриває і не drain-ить `jobs`, яким володіє caller; він надсилає в `results` і закриває
+`results`. Непозитивне число workers нормалізується до одного, порядок results не гарантується.
+
+Workers мають враховувати скасування і під час очікування jobs, і під час публікації results:
+
+```go
+for {
+	select {
+	case job, ok := <-jobs:
+		if !ok {
+			return
+		}
+		result := handle(ctx, job)
+		if ctx.Err() != nil {
+			return
+		}
+		select {
+		case results <- result:
+		case <-ctx.Done():
+			return
+		}
+	case <-ctx.Done():
+		return
+	}
+}
+```
+
+Скасування є кооперативним. Handler має спостерігати `ctx.Done()` або використовувати операції,
+що підтримують context; pool не може примусово перервати код, який ігнорує context. Producer також
+має обирати між надсиланням job і `ctx.Done()`, а потім закривати `jobs`, якщо він володіє цим
+життєвим циклом:
+
+```go
+for _, job := range submittedJobs {
+	select {
+	case jobs <- job:
+	case <-ctx.Done():
+		return
+	}
+}
+close(jobs)
+```
+
+Після скасування jobs, що залишилися в черзі, можуть бути не оброблені. Якщо надсилання result і
+скасування стають готовими одночасно, result може бути надісланий або відкинутий. Тому caller має
+сприймати скасування як завершення операції й не очікувати останній result для кожної job.
+
+Pool зберігає правило v1: `sync.WaitGroup` відстежує завершення workers, а coordinator закриває
+`results` лише після `wg.Wait()`. Скасування не закриває `results` безпосередньо.
+
+Для загального тайм-ауту операції caller створює похідний context:
+
+```go
+ctx, cancel := context.WithTimeout(parent, timeout)
+defer cancel()
+results := workerpool.Run(ctx, workers, jobs, handle)
+```
+
+Помилки окремих jobs залишаються в `Result.Err`; окремого errors channel немає. Загальний тайм-аут
+видимий через `context.DeadlineExceeded` у context handler’а. Тайм-аут окремої job використовує
+дочірній context і не скасовує весь pool:
+
+```go
+handle := workerpool.WithJobTimeout(jobTimeout, func(jobCtx context.Context, job Job) Result {
+	return doJob(jobCtx, job)
+})
+results := workerpool.Run(ctx, workers, jobs, handle)
+```
+
+Wrapped handler має спостерігати `jobCtx.Done()`. Якщо після завершення дочірнього context він
+повернув result без власної помилки, wrapper записує помилку context у `Result.Err`. Тайм-аут однієї
+job не скасовує весь pool. Retries, metrics, tracing і persistent queues не входять до цієї
+лабораторії.
+
+Перевірка:
+
+```bash
+go test ./08-worker-pool-v2/workerpool
+go test -race ./08-worker-pool-v2/workerpool
+```

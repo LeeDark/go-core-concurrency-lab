@@ -421,6 +421,100 @@ go test ./07-worker-pool-v1/workerpool
 go test -race ./07-worker-pool-v1/workerpool
 ```
 
+## Worker Pool v2: управление жизненным циклом
+
+V2 сохраняет фиксированный worker pool и добавляет кооперативную отмену через `context.Context`:
+
+```go
+func Run(
+	ctx context.Context,
+	workerCount int,
+	jobs <-chan Job,
+	handle func(context.Context, Job) Result,
+) <-chan Result
+```
+
+Caller создаёт и отменяет `ctx`, отправляет jobs и закрывает `jobs`, а также читает `results`. Pool
+никогда не закрывает и не drain-ит принадлежащий caller’у `jobs`; он отправляет в `results` и закрывает
+`results`. Неположительное число workers приводится к одному, порядок results не гарантируется.
+
+Workers должны учитывать отмену и при ожидании jobs, и при публикации results:
+
+```go
+for {
+	select {
+	case job, ok := <-jobs:
+		if !ok {
+			return
+		}
+		result := handle(ctx, job)
+		if ctx.Err() != nil {
+			return
+		}
+		select {
+		case results <- result:
+		case <-ctx.Done():
+			return
+		}
+	case <-ctx.Done():
+		return
+	}
+}
+```
+
+Отмена кооперативна. Handler должен наблюдать `ctx.Done()` или использовать операции, которые
+поддерживают context; pool не может принудительно прервать код, игнорирующий context. Producer
+также должен выбирать между отправкой job и `ctx.Done()`, а затем закрывать `jobs`, если он владеет
+этим жизненным циклом:
+
+```go
+for _, job := range submittedJobs {
+	select {
+	case jobs <- job:
+	case <-ctx.Done():
+		return
+	}
+}
+close(jobs)
+```
+
+После отмены jobs, находящиеся в очереди, могут остаться необработанными. Если отправка result и
+отмена становятся готовыми одновременно, result может быть отправлен или отброшен. Поэтому caller
+должен воспринимать отмену как завершение операции и не ожидать последнего result для каждой job.
+
+Pool сохраняет правило v1: `sync.WaitGroup` отслеживает завершение workers, а coordinator закрывает
+`results` только после `wg.Wait()`. Отмена не закрывает `results` напрямую.
+
+Для общего тайм-аута операции caller создаёт производный context:
+
+```go
+ctx, cancel := context.WithTimeout(parent, timeout)
+defer cancel()
+results := workerpool.Run(ctx, workers, jobs, handle)
+```
+
+Ошибки отдельных jobs остаются в `Result.Err`; отдельного errors channel нет. Общий тайм-аут виден
+через `context.DeadlineExceeded` в context handler’а. Тайм-аут отдельной job использует дочерний
+context и не отменяет весь pool:
+
+```go
+handle := workerpool.WithJobTimeout(jobTimeout, func(jobCtx context.Context, job Job) Result {
+	return doJob(jobCtx, job)
+})
+results := workerpool.Run(ctx, workers, jobs, handle)
+```
+
+Wrapped handler должен наблюдать `jobCtx.Done()`. Если после истечения дочернего context он вернул
+результат без собственной ошибки, wrapper записывает ошибку context в `Result.Err`. Тайм-аут одной
+job не отменяет весь pool. Retries, metrics, tracing и persistent queues не входят в эту лабораторию.
+
+Проверка:
+
+```bash
+go test ./08-worker-pool-v2/workerpool
+go test -race ./08-worker-pool-v2/workerpool
+```
+
 # Race Detector / Memory Model / Scheduler
 
 ## Data race

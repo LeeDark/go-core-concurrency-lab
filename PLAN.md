@@ -47,8 +47,8 @@ The current priorities group that path into phases:
 | 1     | Slices                                          | Finished, closed         |
 | 2     | Worker Pool v1                                  | Finished, closed         |
 | 3     | Maps                                            | Finished, closed         |
-| 4     | Defer, errors, context, and Worker Pool v2      | Current                  |
-| 5     | Race detector, memory model, and runtime        | Planned                  |
+| 4     | Defer, errors, context, and Worker Pool v2      | Finished, closed         |
+| 5     | Race detector, memory model, and runtime        | Current                  |
 | 6     | Types, interfaces, and Pipeline v1              | Planned                  |
 | 7     | Structure and Pipeline v2                       | Planned                  |
 | 8     | Generics, tooling, workspaces, and shared state | Planned                  |
@@ -125,7 +125,7 @@ Completed output:
 
 ## Phase 4: Defer, Errors, Context, And Worker Pool v2
 
-Current work.
+Finished and closed.
 
 Core focus:
 
@@ -142,7 +142,6 @@ Concurrency focus:
 - stop workers while waiting for jobs;
 - stop workers while sending results;
 - define a simple cancellation and timeout policy;
-- introduce basic data-race examples and synchronization reasoning;
 - reason about goroutine leaks.
 
 Primary docs:
@@ -157,17 +156,33 @@ Stop line:
   retries, metrics, tracing, persistent queues, or signal handling.
 - Leave the full race-detector, memory-model, and runtime treatment for Phase 5.
 
+Completed output:
+
+- [`03-defer-errors-context/README.md`](03-defer-errors-context/README.md) with focused defer,
+  errors, context, and integrated lifecycle examples;
+- [`08-worker-pool-v2/README.md`](08-worker-pool-v2/README.md) and `workerpool/` with cancellation
+  while receiving jobs and publishing results, whole-operation and per-job timeouts, and lifecycle
+  tests;
+- Worker Pool v2 notes in the English, Russian, and Ukrainian concurrency cheatsheets.
+
 ## Phase 5: Race Detector, Memory Model, And Runtime
 
-Focus:
+Current work.
+
+Track A — Race Detector And Happens-Before:
 
 - explain what the race detector finds;
 - explain what the race detector does not prove;
 - understand happens-before at a practical level;
-- connect synchronization choices to correctness;
+- connect channel operations, `WaitGroup`, mutex, and atomic operations to synchronization;
+- use small unsafe and safe examples without changing Worker Pool v2 into a new API.
+
+Track B — Goroutine Lifecycle, Runtime, And Scheduler:
+
 - understand goroutine lifecycle;
 - distinguish concurrency from parallelism;
 - explain the Go scheduler model at a high level;
+- understand G-M-P and `GOMAXPROCS` at a practical level;
 - reason about CPU-bound versus I/O-bound concurrency.
 
 Primary docs:
@@ -176,8 +191,16 @@ Primary docs:
 
 Planned output:
 
-- `05-race-detector-memory-model-runtime/README.md`
-- targeted examples with `go test -race` where useful.
+- `09-race-detector-memory-model-runtime/README.md`
+- focused safe and unsafe examples for race detection and happens-before;
+- controlled goroutine lifecycle and scheduler examples;
+- targeted `go test -race` checks where useful.
+
+Stop line:
+
+- Do not add a Worker Pool v3, retries, rate limiting, metrics, tracing, profiler-driven tuning,
+  HTTP shutdown, or OS signals in this phase.
+- Leave the detailed choice between mutex, channels, and atomics for shared-state work in Phase 8.
 
 ## Phase 6: Types, Interfaces, And Pipeline v1
 
@@ -304,4 +327,5 @@ go test ./05-slices-maps/maps-lab
 go test -race ./05-slices-maps/maps-lab
 go test ./07-worker-pool-v1/workerpool
 go test -race ./07-worker-pool-v1/workerpool
+go test -race ./08-worker-pool-v2/workerpool
 ```
